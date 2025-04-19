@@ -9,14 +9,12 @@ on:
       - develop
 
 jobs:
-  setup:
+  build-and-test:
     runs-on: ubuntu-latest
-    outputs:
-      build_dir: ${{ github.workspace }}/build
-    
+
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
 
     - name: Install dependencies
       run: |
@@ -29,63 +27,32 @@ jobs:
           clang-tidy \
           cppcheck \
           libgtest-dev
-
     - name: Configure and build
       run: |
         mkdir -p build
         cd build
         cmake ..
         cmake --build . --parallel
-
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: build-dir
-        path: build
-        retention-days: 1
-
-  analysis:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Download build artifacts
-      uses: actions/download-artifact@v3
-      with:
-        name: build-dir
-        path: build
-
     - name: Run clang-format test
-      working-directory: build
-      run: cmake --build . --target clang-format-test
+      run: |
+        cd build
+        cmake --build . --target clang-format-test
     
     - name: Run cppcheck
-      working-directory: build
-      run: cmake --build . --target cppcheck-test
-
+      run: |
+        cd build
+        cmake --build . --target cppcheck-test
     - name: Run clang-tidy
-      working-directory: build
-      run: cmake --build . --target clang-tidy-test
-
-  test:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Download build artifacts
-      uses: actions/download-artifact@v3
-      with:
-        name: build-dir
-        path: build
-
+      run: |
+        cd build
+        cmake --build . --target clang-tidy-test
     - name: Run tests
-      working-directory: build
-      run: ctest --output-on-failure --parallel
+      run: |
+        cd build
+        ctest --output-on-failure --parallel
+    
+    - name: Run tests
+      run: |
+        cd build
+        cmake --build . --target valgrind-test
 
-    - name: Run valgrind tests
-      working-directory: build
-      run: cmake --build . --target valgrind-test
