@@ -15,34 +15,104 @@ env:
 jobs:
   setup-and-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
     steps:
-    - uses: actions/checkout@v4
-    
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Create build directory
-      run: mkdir -p build
+      run: mkdir -p ${{ env.BUILD_DIR }}
+
+    - name: Cache APT packages
+      uses: actions/cache@v3
+      with:
+        path: /var/cache/apt/archives
+        key: ${{ runner.os }}-apt-${{ hashFiles('.github/apt-dependencies.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-apt-
+
+    - name: Install LLVM 18
+      run: |
+        wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s 18
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        xargs -a .github/apt-dependencies.txt sudo apt-get install -y
+        sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-18 100
+        sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-18 100
 
     - name: Configure project
-      working-directory: build
+      working-directory: ${{ env.BUILD_DIR }}
       run: cmake .. -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
 
     - name: Build project
-      working-directory: build
+      working-directory: ${{ env.BUILD_DIR }}
       run: cmake --build . --parallel $(nproc)
 
   static-analysis:
     needs: setup-and-build
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Prepare build directory
+      run: mkdir -p ${{ env.BUILD_DIR }}
 
     - name: Run clang-format check
-      working-directory: build
+      working-directory: ${{ env.BUILD_DIR }}
       run: cmake --build . --target clang-format-test
 
     - name: Run cppcheck
-      working-directory: build
+      working-directory: ${{ env.BUILD_DIR }}
       run: cmake --build . --target cppcheck-test
 
     - name: Run clang-tidy
-      working-directory: build
+      working-directory: ${{ env.BUILD_DIR }}
       run: cmake --build . --target clang-tidy-test
+
+  testing:
+    needs: setup-and-build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Prepare build directory
+      run: mkdir -p ${{ env.BUILD_DIR }}
+
+    - name: Run unit tests
+      working-directory: ${{ env.BUILD_DIR }}
+      run: ctest --output-on-failure --parallel $(nproc)
+
+    - name: Run valgrind tests
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --target valgrind-test
+
+  coverage:
+    needs: testing
+    if: github.ref == 'refs/heads/develop' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Prepare build directory
+      run: mkdir -p ${{ env.BUILD_DIR }}
+
+    - name: Generate coverage report
+      working-directory: ${{ env.BUILD_DIR }}
+      run: |
+        cmake --build . --target coverage
+        bash <(curl -s https://codecov.io/bash)
+
+    - name: Upload coverage artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: ${{ env.BUILD_DIR }}/coverage/html
