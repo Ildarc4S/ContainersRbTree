@@ -72,8 +72,7 @@ endforeach()
 find_program(CLANG_TIDY "clang-tidy")
 if(CLANG_TIDY)
 
-    # Создаем упрощенный .clang-tidy конфиг (без AnalyzeTemporaryDtors)
-    file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy
+file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy
     "---
 Checks: >
     -*,
@@ -83,12 +82,13 @@ Checks: >
     performance-*,
     readability-*,
     bugprone-*
+    -modernize-use-auto,
+    -modernize-use-trailing-return-type
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
 ...
 ")
 
-    # Единая цель для clang-tidy с обработкой ошибок
     add_custom_target(clang-tidy-test
         COMMAND ${CLANG_TIDY}
         ${LIB_SOURCE_FILES} ${TEST_SOURCE_FILES}
@@ -98,17 +98,6 @@ HeaderFilterRegex: '.*'
         COMMENT "Running clang-tidy static analysis"
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         VERBATIM
-    )
-
-    add_custom_target(clang-tidy-fix
-        COMMAND ${CLANG_TIDY}
-        ${LIB_SOURCE_FILES} ${TEST_SOURCE_FILES}
-        --config-file=${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy
-        -p=${CMAKE_BINARY_DIR}
-        --fix
-        --quiet
-        COMMENT "Applying clang-tidy fixes"
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     )
 else()
     message(WARNING "clang-tidy not found! Static analysis target 'clang-tidy' will not be available")

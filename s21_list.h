@@ -13,7 +13,7 @@ template <typename T>
 class list {
   // Реализация контейнера list
 public:
-  list() {
+  list(int i) {
     std::cout << "A";
   }
 };
