@@ -2,15 +2,13 @@ name: CI for C++ Containers
 
 on:
   push:
-    branches:
-      - '**'
+    branches: [ "**" ]
   pull_request:
-    branches:
-      - develop
+    branches: [ "develop" ]
 
 env:
   BUILD_TYPE: Debug
-  BUILD_DIR: build
+  BUILD_DIR: ${{ github.workspace }}/build
 
 jobs:
   setup-and-build:
@@ -18,12 +16,10 @@ jobs:
     timeout-minutes: 30
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
     - name: Install dependencies
       run: |
-        # Установка LLVM 18
         wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s 18
         sudo apt-get update
         sudo apt-get install -y \
@@ -36,58 +32,51 @@ jobs:
           libgtest-dev \
           lcov \
           gcovr \
-          ccache \
-          libstdc++-12-dev
-        
-        # Настройка альтернатив для clang-tools
+          ccache
         sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-18 100
         sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-18 100
 
     - name: Configure project
       run: |
-        mkdir -p ${{ env.BUILD_DIR }}
-        cd ${{ env.BUILD_DIR }}
-        cmake .. -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+        mkdir -p "$BUILD_DIR"
+        cmake -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 
     - name: Build project
-      working-directory: ${{ env.BUILD_DIR }}
-      run: cmake --build . --parallel $(nproc)
+      run: cmake --build "$BUILD_DIR" --parallel $(nproc)
 
   static-analysis:
     needs: setup-and-build
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
+
+    - name: Reconfigure (force fresh cache)
+      run: cmake -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 
     - name: Run clang-format check
-      working-directory: ${{ env.BUILD_DIR }}
-      run: cmake --build . --target clang-format-test
+      run: cmake --build "$BUILD_DIR" --target clang-format-test
 
     - name: Run cppcheck
-      working-directory: ${{ env.BUILD_DIR }}
-      run: cmake --build . --target cppcheck-test
+      run: cmake --build "$BUILD_DIR" --target cppcheck-test
 
     - name: Run clang-tidy
-      working-directory: ${{ env.BUILD_DIR }}
-      run: cmake --build . --target clang-tidy-test
+      run: cmake --build "$BUILD_DIR" --target clang-tidy-test
 
   testing:
     needs: setup-and-build
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Run unit tests
-      working-directory: ${{ env.BUILD_DIR }}
-      run: ctest --output-on-failure --parallel $(nproc)
+    - name: Run tests
+      run: |
+        cd "$BUILD_DIR"
+        ctest --output-on-failure --parallel $(nproc)
 
-    - name: Run valgrind tests
-      working-directory: ${{ env.BUILD_DIR }}
-      run: cmake --build . --target valgrind-test
+    - name: Run valgrind check
+      run: cmake --build "$BUILD_DIR" --target valgrind-test
 
   coverage:
     needs: testing
@@ -95,17 +84,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Generate coverage report
-      working-directory: ${{ env.BUILD_DIR }}
+    - name: Generate coverage
       run: |
-        cmake --build . --target coverage
+        cmake --build "$BUILD_DIR" --target coverage
         bash <(curl -s https://codecov.io/bash)
-
-    - name: Upload coverage report
-      uses: actions/upload-artifact@v3
-      with:
-        name: coverage-report
-        path: ${{ env.BUILD_DIR }}/coverage/html
