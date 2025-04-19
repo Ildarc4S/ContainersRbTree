@@ -8,15 +8,18 @@ on:
 
 env:
   BUILD_TYPE: Debug
-  BUILD_DIR: ${{ github.workspace }}/build
 
 jobs:
-  setup-and-build:
+  setup:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
+    outputs:
+      build_dir: ${{ steps.set_build_dir.outputs.path }}
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Set build directory
+      id: set_build_dir
+      run: echo "path=${{ github.workspace }}/build_${{ github.run_id }}" >> $GITHUB_OUTPUT
 
     - name: Install dependencies
       run: |
@@ -36,25 +39,29 @@ jobs:
         sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-18 100
         sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-18 100
 
-    - name: Configure project
-      run: |
-        mkdir -p "$BUILD_DIR"
-        cmake -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=$BUILD_TYPE
-
-    - name: Build project
-      run: cmake --build "$BUILD_DIR" --parallel $(nproc)
-
-  static-analysis:
-    needs: setup-and-build
+  build:
+    needs: setup
     runs-on: ubuntu-latest
-
+    env:
+      BUILD_DIR: ${{ needs.setup.outputs.build_dir }}
     steps:
     - uses: actions/checkout@v4
-
-    - name: Reconfigure (force fresh cache)
+    
+    - name: Configure
       run: cmake -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 
-    - name: Run clang-format check
+    - name: Build
+      run: cmake --build "$BUILD_DIR" --parallel $(nproc)
+
+  analysis:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      BUILD_DIR: ${{ needs.setup.outputs.build_dir }}
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run clang-format
       run: cmake --build "$BUILD_DIR" --target clang-format-test
 
     - name: Run cppcheck
@@ -63,30 +70,48 @@ jobs:
     - name: Run clang-tidy
       run: cmake --build "$BUILD_DIR" --target clang-tidy-test
 
-  testing:
-    needs: setup-and-build
+  test:
+    needs: build
     runs-on: ubuntu-latest
-
+    env:
+      BUILD_DIR: ${{ needs.setup.outputs.build_dir }}
     steps:
     - uses: actions/checkout@v4
-
+    
     - name: Run tests
       run: |
-        cd "$BUILD_DIR"
-        ctest --output-on-failure --parallel $(nproc)
+        if [ -d "$BUILD_DIR" ]; then
+          cd "$BUILD_DIR"
+          ctest --output-on-failure --parallel $(nproc)
+        else
+          echo "Error: Build directory $BUILD_DIR does not exist"
+          exit 1
+        fi
 
-    - name: Run valgrind check
-      run: cmake --build "$BUILD_DIR" --target valgrind-test
+    - name: Valgrind check
+      run: |
+        if [ -d "$BUILD_DIR" ]; then
+          cmake --build "$BUILD_DIR" --target valgrind-test
+        else
+          echo "Error: Build directory $BUILD_DIR does not exist"
+          exit 1
+        fi
 
   coverage:
-    needs: testing
+    needs: test
     if: github.ref == 'refs/heads/develop' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-
+    env:
+      BUILD_DIR: ${{ needs.setup.outputs.build_dir }}
     steps:
     - uses: actions/checkout@v4
-
+    
     - name: Generate coverage
       run: |
-        cmake --build "$BUILD_DIR" --target coverage
-        bash <(curl -s https://codecov.io/bash)
+        if [ -d "$BUILD_DIR" ]; then
+          cmake --build "$BUILD_DIR" --target coverage
+          bash <(curl -s https://codecov.io/bash)
+        else
+          echo "Error: Build directory $BUILD_DIR does not exist"
+          exit 1
+        fi
