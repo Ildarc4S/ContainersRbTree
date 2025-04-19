@@ -1,0 +1,10 @@
+build-essential
+cmake
+valgrind
+clang-format-18
+clang-tidy-18
+cppcheck
+libgtest-dev
+lcov
+gcovr
+ccache

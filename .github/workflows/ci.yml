@@ -1,4 +1,4 @@
-name: CI for containers
+name: CI for C++ Containers
 
 on:
   push:
@@ -8,55 +8,63 @@ on:
     branches:
       - develop
 
+env:
+  BUILD_TYPE: Debug
+  BUILD_DIR: build
+
 jobs:
-  build-and-test:
+  setup-and-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
+
+    # Кеширование ТОЛЬКО APT-пакетов по файлу зависимостей
+    - name: Cache APT packages
+      uses: actions/cache@v3
+      with:
+        path: /var/cache/apt/archives
+        key: ${{ runner.os }}-apt-${{ hashFiles('.github/apt-dependencies.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-apt-
+
+    - name: Install LLVM 18
+      run: |
+        wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s 18
 
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y \
-          build-essential \
-          cmake \
-          valgrind \
-          clang-format \
-          clang-tidy \
-          cppcheck \
-          libgtest-dev
+        xargs -a .github/apt-dependencies.txt sudo apt-get install -y
+        sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-18 100
+        sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-18 100
 
-    - name: Configure and build
+    - name: Configure project
       run: |
-        mkdir -p build
-        cd build
-        cmake ..
-        cmake --build . --parallel
+        mkdir -p ${{ env.BUILD_DIR }}
+        cd ${{ env.BUILD_DIR }}
+        cmake .. -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
 
-    - name: Run clang-format test
+    - name: Build project
       run: |
-        cd build
-        cmake --build . --target clang-format-test
-    
-    - name: Run cppcheck
-      run: |
-        cd build
-        cmake --build . --target cppcheck-test
+        cd ${{ env.BUILD_DIR }}
+        cmake --build . --parallel $(nproc)
 
-    - name: Run clang-tidy
-      run: |
-        cd build
-        cmake --build . --target clang-tidy-test
+  static-analysis:
+    needs: setup-and-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cd ${{ env.BUILD_DIR }} && cmake --build . --target clang-format-test
+      - run: cd ${{ env.BUILD_DIR }} && cmake --build . --target cppcheck-test
+      - run: cd ${{ env.BUILD_DIR }} && cmake --build . --target clang-tidy-test
 
-    - name: Run tests
-      run: |
-        cd build
-        ctest --output-on-failure --parallel
-    
-    - name: Run tests
-      run: |
-        cd build
-        cmake --build . --target valgrind-test
-
+  testing:
+    needs: setup-and-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cd ${{ env.BUILD_DIR }} && ctest --output-on-failure --parallel $(nproc)
+      - run: cd ${{ env.BUILD_DIR }} && cmake --build . --target valgrind-test
