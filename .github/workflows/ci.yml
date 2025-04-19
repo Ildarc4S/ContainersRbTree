@@ -1,117 +1,91 @@
-name: CI for C++ Containers
+name: CI for containers
 
 on:
   push:
-    branches: [ "**" ]
+    branches:
+      - '**'
   pull_request:
-    branches: [ "develop" ]
-
-env:
-  BUILD_TYPE: Debug
+    branches:
+      - develop
 
 jobs:
   setup:
     runs-on: ubuntu-latest
     outputs:
-      build_dir: ${{ steps.set_build_dir.outputs.path }}
-    steps:
-    - uses: actions/checkout@v4
+      build_dir: ${{ github.workspace }}/build
     
-    - name: Set build directory
-      id: set_build_dir
-      run: echo "path=${{ github.workspace }}/build_${{ github.run_id }}" >> $GITHUB_OUTPUT
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Install dependencies
       run: |
-        wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s 18
         sudo apt-get update
         sudo apt-get install -y \
           build-essential \
           cmake \
           valgrind \
-          clang-format-18 \
-          clang-tidy-18 \
+          clang-format \
+          clang-tidy \
           cppcheck \
-          libgtest-dev \
-          lcov \
-          gcovr \
-          ccache
-        sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-18 100
-        sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-18 100
+          libgtest-dev
 
-  build:
-    needs: setup
-    runs-on: ubuntu-latest
-    env:
-      BUILD_DIR: ${{ needs.setup.outputs.build_dir }}
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Configure
-      run: cmake -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+    - name: Configure and build
+      run: |
+        mkdir -p build
+        cd build
+        cmake ..
+        cmake --build . --parallel
 
-    - name: Build
-      run: cmake --build "$BUILD_DIR" --parallel $(nproc)
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-dir
+        path: build
+        retention-days: 1
 
   analysis:
-    needs: build
+    needs: setup
     runs-on: ubuntu-latest
-    env:
-      BUILD_DIR: ${{ needs.setup.outputs.build_dir }}
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Run clang-format
-      run: cmake --build "$BUILD_DIR" --target clang-format-test
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: build-dir
+        path: build
 
+    - name: Run clang-format test
+      working-directory: build
+      run: cmake --build . --target clang-format-test
+    
     - name: Run cppcheck
-      run: cmake --build "$BUILD_DIR" --target cppcheck-test
+      working-directory: build
+      run: cmake --build . --target cppcheck-test
 
     - name: Run clang-tidy
-      run: cmake --build "$BUILD_DIR" --target clang-tidy-test
+      working-directory: build
+      run: cmake --build . --target clang-tidy-test
 
   test:
-    needs: build
+    needs: setup
     runs-on: ubuntu-latest
-    env:
-      BUILD_DIR: ${{ needs.setup.outputs.build_dir }}
     steps:
-    - uses: actions/checkout@v4
-    
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: build-dir
+        path: build
+
     - name: Run tests
-      run: |
-        if [ -d "$BUILD_DIR" ]; then
-          cd "$BUILD_DIR"
-          ctest --output-on-failure --parallel $(nproc)
-        else
-          echo "Error: Build directory $BUILD_DIR does not exist"
-          exit 1
-        fi
+      working-directory: build
+      run: ctest --output-on-failure --parallel
 
-    - name: Valgrind check
-      run: |
-        if [ -d "$BUILD_DIR" ]; then
-          cmake --build "$BUILD_DIR" --target valgrind-test
-        else
-          echo "Error: Build directory $BUILD_DIR does not exist"
-          exit 1
-        fi
-
-  coverage:
-    needs: test
-    if: github.ref == 'refs/heads/develop' || github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    env:
-      BUILD_DIR: ${{ needs.setup.outputs.build_dir }}
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Generate coverage
-      run: |
-        if [ -d "$BUILD_DIR" ]; then
-          cmake --build "$BUILD_DIR" --target coverage
-          bash <(curl -s https://codecov.io/bash)
-        else
-          echo "Error: Build directory $BUILD_DIR does not exist"
-          exit 1
-        fi
+    - name: Run valgrind tests
+      working-directory: build
+      run: cmake --build . --target valgrind-test
