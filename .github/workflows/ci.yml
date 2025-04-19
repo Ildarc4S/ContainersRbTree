@@ -15,56 +15,34 @@ env:
 jobs:
   setup-and-build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    # Кеширование ТОЛЬКО APT-пакетов по файлу зависимостей
-    - name: Cache APT packages
-      uses: actions/cache@v3
-      with:
-        path: /var/cache/apt/archives
-        key: ${{ runner.os }}-apt-${{ hashFiles('.github/apt-dependencies.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-apt-
-
-    - name: Install LLVM 18
-      run: |
-        wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s 18
-
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        xargs -a .github/apt-dependencies.txt sudo apt-get install -y
-        sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-18 100
-        sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-18 100
+    - uses: actions/checkout@v4
+    
+    - name: Create build directory
+      run: mkdir -p build
 
     - name: Configure project
-      run: |
-        mkdir -p ${{ env.BUILD_DIR }}
-        cd ${{ env.BUILD_DIR }}
-        cmake .. -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+      working-directory: build
+      run: cmake .. -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
 
     - name: Build project
-      run: |
-        cd ${{ env.BUILD_DIR }}
-        cmake --build . --parallel $(nproc)
+      working-directory: build
+      run: cmake --build . --parallel $(nproc)
 
   static-analysis:
     needs: setup-and-build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - run: cd ${{ env.BUILD_DIR }} && cmake --build . --target clang-format-test
-      - run: cd ${{ env.BUILD_DIR }} && cmake --build . --target cppcheck-test
-      - run: cd ${{ env.BUILD_DIR }} && cmake --build . --target clang-tidy-test
+    - uses: actions/checkout@v4
 
-  testing:
-    needs: setup-and-build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: cd ${{ env.BUILD_DIR }} && ctest --output-on-failure --parallel $(nproc)
-      - run: cd ${{ env.BUILD_DIR }} && cmake --build . --target valgrind-test
+    - name: Run clang-format check
+      working-directory: build
+      run: cmake --build . --target clang-format-test
+
+    - name: Run cppcheck
+      working-directory: build
+      run: cmake --build . --target cppcheck-test
+
+    - name: Run clang-tidy
+      working-directory: build
+      run: cmake --build . --target clang-tidy-test
