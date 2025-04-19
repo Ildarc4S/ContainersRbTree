@@ -12,10 +12,9 @@ namespace s21 {
 template <typename T>
 class list {
   // Реализация контейнера list
-public:
-  list(int i) {
-    std::cout << "A";
-  }
+ public:
+  list() = default;
+  explicit list(int inum) { std::cout << "A"; }
 };
 
 }  // namespace s21
