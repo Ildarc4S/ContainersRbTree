@@ -7,7 +7,7 @@ namespace s21 {
  * @class map
  * @brief Реализация контейнера map аналогичного std::map
  */
-template <typename T>
+itemplate <typename T>
 class map {
   // Реализация контейнера map
 };
