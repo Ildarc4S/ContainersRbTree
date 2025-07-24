@@ -13,16 +13,8 @@ jobs:
     - name: Checkout sources
       uses: actions/checkout@v4
 
-    # Кеш для Conan
-    - name: Cache Conan
-      uses: actions/cache@v4
-      with:
-        path: ~/.conan2
-        key: ${{ runner.os }}-conan2-${{ hashFiles('conanfile.*') }}
-        restore-keys: |
-          ${{ runner.os }}-conan2-
-
     # Кеш Docker слоев (ускоряет docker build)
+    # Этот кеш опционален, но очень полезен для ускорения сборки Docker-образа
     - name: Cache Docker layers
       uses: actions/cache@v4
       with:
@@ -37,14 +29,16 @@ jobs:
     - name: Build Docker image
       uses: docker/build-push-action@v5
       with:
-        context: .
-        file: ./docker/Dockerfile
-        load: true
-        tags: my-cpp-app:latest
-        cache-from: type=local,src=/tmp/.buildx-cache
-        cache-to: type=local,dest=/tmp/.buildx-cache
+        context: .                   # Контекст сборки: текущая директория репозитория
+        file: ./docker/Dockerfile    # Путь к вашему Dockerfile
+        load: true                   # Загружает образ в Docker daemon после сборки, чтобы его можно было использовать сразу
+        tags: my-cpp-app:latest      # Имя и тег для образа
+        cache-from: type=local,src=/tmp/.buildx-cache # Использование кеша для ускорения сборки
+        cache-to: type=local,dest=/tmp/.buildx-cache  # Сохранение кеша для последующих запусков
 
     - name: Run tests inside Docker
-      run: docker run --rm my-cpp-app
-
+      # Предполагается, что ваш Dockerfile в CMD запускает ctest
+      # Как было в последней итерации Dockerfile: CMD ["ctest", "--output-on-failure"]
+      run: docker run --rm my-cpp-app:latest
+      # Указываем my-cpp-app:latest, чтобы быть явными
 
