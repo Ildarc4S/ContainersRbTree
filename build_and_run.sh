@@ -1,43 +1,27 @@
 #!/bin/bash
 
-# Проверяем, установлен ли CMake и make
-if ! command -v cmake &> /dev/null; then
-    echo "Ошибка: CMake не установлен. Установите его сначала."
+# Цвета ANSI
+GREEN="\033[0;32m"
+NC="\033[0m" # Без цвета (normal color)
+
+# --- Конфигурация Docker ---
+DOCKERFILE_PATH="docker/Dockerfile" # Путь к вашему Dockerfile
+IMAGE_NAME="my_project_image"       # Имя Docker-образа
+CONTAINER_NAME="my_project_container" # Имя Docker-контейнера
+
+# --- Сборка Docker образа ---
+echo "🔨 Сборка Docker образа '$IMAGE_NAME' из $DOCKERFILE_PATH..."
+docker build -t "$IMAGE_NAME" -f "$DOCKERFILE_PATH" . || {
+    echo "❌ Ошибка сборки Docker образа. Проверьте ваш Dockerfile."
     exit 1
-fi
-if ! command -v make &> /dev/null; then
-    echo "Ошибка: make не установлен. Установите его сначала."
+}
+
+# --- Запуск Docker контейнера ---
+echo -e "${GREEN}🚀 Запуск Docker контейнера '$CONTAINER_NAME'...${NC}"
+docker run --rm -it --name "$CONTAINER_NAME" "$IMAGE_NAME" || {
+    echo "❌ Ошибка запуска Docker контейнера. Проверьте CMD в вашем Dockerfile или наличие исполняемого файла."
     exit 1
-fi
+}
 
-# Папка сборки (может быть изменена)
-BUILD_DIR="build"
-mkdir -p "$BUILD_DIR"
-cd "$BUILD_DIR" || exit
+echo -e "${GREEN}✅ Контейнер завершил работу.${NC}"
 
-# Запускаем CMake
-echo "🔧 Запуск CMake..."
-cmake .. || { echo "❌ Ошибка CMake"; exit 1; }
-
-# Собираем проект
-echo "🔨 Сборка проекта..."
-make -j$(nproc) || { echo "❌ Ошибка сборки"; exit 1; }
-
-# Возвращаемся в корень проекта
-cd ..
-
-# Запускаем тесты (если они есть в bin/tests)
-TEST_DIR="bin/tests"
-if [ -d "$TEST_DIR" ]; then
-    echo "🚀 Запуск тестов из $TEST_DIR..."
-    for test_file in "$TEST_DIR"/s21_test_*; do
-        if [ -f "$test_file" ]; then
-            echo "🔍 Тест: $(basename "$test_file")"
-            "$test_file" || echo "❌ Тест завершился с ошибкой"
-        fi
-    done
-else
-    echo "⚠ Папка $TEST_DIR не найдена. Тесты не запущены."
-fi
-
-echo "✅ Готово!"
