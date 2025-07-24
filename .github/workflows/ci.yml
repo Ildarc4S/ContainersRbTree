@@ -1,4 +1,4 @@
-name: CIname: CI Docker C++ Build with Coverage and GitHub Pages
+name: CI Docker C++ Build with Coverage and GitHub Pages
 
 on:
   push:
