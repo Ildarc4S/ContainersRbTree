@@ -43,8 +43,8 @@ jobs:
     - name: Generate coverage report inside Docker
       run: |
         mkdir -p coverage
-        docker run --rm -v ${{ github.workspace }}/coverage:/project/coverage my-cpp-app:latest \
-          cmake --build build --target coverage_all
+        docker run --rm -v ${{ github.workspace }}/coverage:/project/coverage -w /project/build my-cpp-app:latest \
+        cmake --build . --target coverage_all
 
     - name: Upload coverage report as artifact
       uses: actions/upload-artifact@v4
