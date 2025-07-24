@@ -11,14 +11,7 @@ find_package(Threads REQUIRED)
 
 # Список тестируемых контейнеров
 set(CONTAINERS 
-    array
-    vector
-    list
-    map
-    set
-    stack
-    queue
-    multiset
+  rb_tree
 )
 
 # Список тестовых файлов
