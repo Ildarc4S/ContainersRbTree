@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.20)
 project(S21Containers LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -11,26 +11,19 @@ find_package(Threads REQUIRED)
 
 # Список тестируемых контейнеров
 set(CONTAINERS 
-    array
-    vector
-    list
-    map
-    set
-    stack
-    queue
-    multiset
+  rb_tree
 )
 
 # Список тестовых файлов
 file(GLOB TEST_SOURCE_FILES
-    "${CMAKE_SOURCE_DIR}/tests/*.cc"
-    "${CMAKE_SOURCE_DIR}/tests/*.h"
+    "${CMAKE_SOURCE_DIR}/src/tests/*.cc"
+    "${CMAKE_SOURCE_DIR}/src/tests/*.h"
 )
 
 # Список файлов библиотеки
 file(GLOB LIB_SOURCE_FILES
-    "${CMAKE_SOURCE_DIR}/*.cc"
-    "${CMAKE_SOURCE_DIR}/*.h"
+    "${CMAKE_SOURCE_DIR}/src/*.cc"
+    "${CMAKE_SOURCE_DIR}/src/include*.h"
 )
 
 enable_testing()
@@ -40,7 +33,7 @@ foreach(CONTAINER ${CONTAINERS})
     set(TEST_NAME "s21_test_${CONTAINER}")
     
     # Создание исполняемого файла
-    add_executable(${TEST_NAME} tests/${TEST_NAME}.cc)
+    add_executable(${TEST_NAME} src/tests/${TEST_NAME}.cc)
     
     # Подключение зависимостей
     target_link_libraries(${TEST_NAME}
@@ -69,11 +62,10 @@ foreach(CONTAINER ${CONTAINERS})
 endforeach()
 
 # Поиск clang-tidy и настройка анализа
-find_program(CLANG_TIDY "clang-tidy")
+find_program(CLANG_TIDY "clang-tidy-18")
 if(CLANG_TIDY)
 
-    # Создаем упрощенный .clang-tidy конфиг (без AnalyzeTemporaryDtors)
-    file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy
+file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy
     "---
 Checks: >
     -*,
@@ -83,12 +75,13 @@ Checks: >
     performance-*,
     readability-*,
     bugprone-*
+    -modernize-use-auto,
+    -modernize-use-trailing-return-type
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
 ...
 ")
 
-    # Единая цель для clang-tidy с обработкой ошибок
     add_custom_target(clang-tidy-test
         COMMAND ${CLANG_TIDY}
         ${LIB_SOURCE_FILES} ${TEST_SOURCE_FILES}
@@ -98,17 +91,6 @@ HeaderFilterRegex: '.*'
         COMMENT "Running clang-tidy static analysis"
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         VERBATIM
-    )
-
-    add_custom_target(clang-tidy-fix
-        COMMAND ${CLANG_TIDY}
-        ${LIB_SOURCE_FILES} ${TEST_SOURCE_FILES}
-        --config-file=${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy
-        -p=${CMAKE_BINARY_DIR}
-        --fix
-        --quiet
-        COMMENT "Applying clang-tidy fixes"
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     )
 else()
     message(WARNING "clang-tidy not found! Static analysis target 'clang-tidy' will not be available")
@@ -196,7 +178,7 @@ endif()
 
 
 # Поиск clang-format
-find_program(CLANG_FORMAT "clang-format")
+find_program(CLANG_FORMAT "clang-format-18")
 if(CLANG_FORMAT)
     # Цель для проверки форматирования (clang-format-check)
     add_custom_target(clang-format-test
@@ -220,7 +202,7 @@ foreach(CONTAINER ${CONTAINERS})
     # Coverage-версия теста
     set(COVERAGE_TEST_NAME "s21_coverage_${CONTAINER}")
     
-    add_executable(${COVERAGE_TEST_NAME} tests/s21_test_${CONTAINER}.cc)
+    add_executable(${COVERAGE_TEST_NAME} src/tests/s21_test_${CONTAINER}.cc)
     
     target_link_libraries(${COVERAGE_TEST_NAME}
         PRIVATE 

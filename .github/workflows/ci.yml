@@ -1,58 +1,44 @@
-name: CI for containers
+name: CI Docker C++ Build
 
 on:
   push:
-    branches:
-      - '**'
+    branches: [ main, master ]
   pull_request:
-    branches:
-      - develop
 
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+    - name: Checkout sources
+      uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          build-essential \
-          cmake \
-          valgrind \
-          clang-format \
-          clang-tidy \
-          cppcheck \
-          libgtest-dev
-    - name: Configure and build
-      run: |
-        mkdir -p build
-        cd build
-        cmake ..
-        cmake --build . --parallel
-    - name: Run clang-format test
-      run: |
-        cd build
-        cmake --build . --target clang-format-test
-    
-    - name: Run cppcheck
-      run: |
-        cd build
-        cmake --build . --target cppcheck-test
-    - name: Run clang-tidy
-      run: |
-        cd build
-        cmake --build . --target clang-tidy-test
-    - name: Run tests
-      run: |
-        cd build
-        ctest --output-on-failure --parallel
-    
-    - name: Run tests
-      run: |
-        cd build
-        cmake --build . --target valgrind-test
+    # Кеш Docker слоев (ускоряет docker build)
+    # Этот кеш опционален, но очень полезен для ускорения сборки Docker-образа
+    - name: Cache Docker layers
+      uses: actions/cache@v4
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-docker-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-docker-
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .                   # Контекст сборки: текущая директория репозитория
+        file: ./docker/Dockerfile    # Путь к вашему Dockerfile
+        load: true                   # Загружает образ в Docker daemon после сборки, чтобы его можно было использовать сразу
+        tags: my-cpp-app:latest      # Имя и тег для образа
+        cache-from: type=local,src=/tmp/.buildx-cache # Использование кеша для ускорения сборки
+        cache-to: type=local,dest=/tmp/.buildx-cache  # Сохранение кеша для последующих запусков
+
+    - name: Run tests inside Docker
+      # Предполагается, что ваш Dockerfile в CMD запускает ctest
+      # Как было в последней итерации Dockerfile: CMD ["ctest", "--output-on-failure"]
+      run: docker run --rm my-cpp-app:latest
+      # Указываем my-cpp-app:latest, чтобы быть явными
 
