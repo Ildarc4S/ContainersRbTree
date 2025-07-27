@@ -1,44 +1,71 @@
-name: CI Docker C++ Build
+name: Cleanup deployments and build coverage
 
 on:
   push:
-    branches: [ main, master ]
+    branches:
+      - '*'
   pull_request:
+    branches:
+      - '*'
 
 jobs:
-  build:
+  cleanup:
     runs-on: ubuntu-latest
-
+    permissions: write-all
     steps:
-    - name: Checkout sources
-      uses: actions/checkout@v4
+      - name: Delete Deployment Environment
+        uses: strumwolf/delete-deployment-environment@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment: github-pages
+          onlyRemoveDeployments: true
 
-    # Кеш Docker слоев (ускоряет docker build)
-    # Этот кеш опционален, но очень полезен для ускорения сборки Docker-образа
-    - name: Cache Docker layers
-      uses: actions/cache@v4
-      with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-docker-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-docker-
+  build:
+      runs-on: ubuntu-latest
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
 
-    - name: Build Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .                   # Контекст сборки: текущая директория репозитория
-        file: ./docker/Dockerfile    # Путь к вашему Dockerfile
-        load: true                   # Загружает образ в Docker daemon после сборки, чтобы его можно было использовать сразу
-        tags: my-cpp-app:latest      # Имя и тег для образа
-        cache-from: type=local,src=/tmp/.buildx-cache # Использование кеша для ускорения сборки
-        cache-to: type=local,dest=/tmp/.buildx-cache  # Сохранение кеша для последующих запусков
+      # Кеш Docker слоев (ускоряет docker build)
+      # Этот кеш опционален, но очень полезен для ускорения сборки Docker-образа
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Run tests inside Docker
-      # Предполагается, что ваш Dockerfile в CMD запускает ctest
-      # Как было в последней итерации Dockerfile: CMD ["ctest", "--output-on-failure"]
-      run: docker run --rm my-cpp-app:latest
-      # Указываем my-cpp-app:latest, чтобы быть явными
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          load: true
+          tags: s21containers
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+
+      # Основная сборка и вычисление покрытия из Makefile (как и было)
+      - name: Run build and coverage using Makefile
+        run: make build && make coverage
+
+      - name: Upload coverage report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: build/coverage
+
+      - name: List coverage directory
+        run: ls -la build/coverage
+
+      - name: Deploy coverage report to GitHub Pages
+        if: github.ref == 'refs/heads/rb_tree' || github.ref == 'refs/heads/develop'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/coverage
 
