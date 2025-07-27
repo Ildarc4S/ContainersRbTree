@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Docker image locally
-        run: docker build -t cpp-coverage:latest .
+        run: make docker-build 
 
       - name: Run build and coverage using Makefile
         run: make coverage
