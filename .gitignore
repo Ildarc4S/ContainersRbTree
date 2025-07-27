@@ -2,5 +2,6 @@ bin
 build
 .DS_Store
 .clang-tidy
-.vscode/
-coverage/
+.vscode
+coverage
+.cache
