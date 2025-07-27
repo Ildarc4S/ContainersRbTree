@@ -1,0 +1,1 @@
+genhtml --output-directory /project/build/coverage coverage_filtered.info
