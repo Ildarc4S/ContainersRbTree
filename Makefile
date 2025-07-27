@@ -7,7 +7,7 @@ docker-build:
 
 .PHONY: build
 build:
-	docker run --rm -it -v $(PWD):/project -w /project/build $(IMAGE_NAME) bash -c "cmake -B . -S .. && cmake --build ."
+	docker run --rm -it -v $(PWD):/project -w /project/build $(IMAGE_NAME) bash -c "cmake -DCOVERAGE=ON -B . -S .. && cmake --build ."
 
 .PHONY: test
 test:
@@ -19,39 +19,39 @@ test-%:
 
 .PHONY: test-verbose-%
 test-verbose-%:
-	docker run --rm -it -v $(PWD):/project -w /project/build $(IMAGE_NAME) ctest -V -R ^$*$$
+	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) ctest -V -R ^$*$$
 
 .PHONY: cppcheck
 cppcheck:
-	docker run --rm -it -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target cppcheck-test
+	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target cppcheck-test
 
 .PHONY: cppcheck-sources
 cppcheck-sources:
-	docker run --rm -it -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target cppcheck-test-sources
+	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target cppcheck-test-sources
 
 .PHONY: clang-tidy
 clang-tidy:
-	docker run --rm -it -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target clang-tidy-test
+	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target clang-tidy-test
 
 .PHONY: clang-format
 clang-format:
-	docker run --rm -it -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target clang-format-test
+	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target clang-format-test
 
 .PHONY: clang-format-fix
 clang-format-fix:
-	docker run --rm -it -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target clang-format-fix
+	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target clang-format-fix
 
 .PHONY: valgrind
 valgrind:
-	docker run --rm -it -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target valgrind-test
+	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target valgrind-test
 
 .PHONY: valgrind-%
 valgrind-%:
-	docker run --rm -it -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target valgrind_$*
+	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target valgrind_$*
 
 .PHONY: coverage
 coverage:
-	docker run --rm -it -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target coverage_all
+	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target coverage_all
 
 .PHONY: help
 help:
@@ -70,5 +70,5 @@ help:
 
 .PHONY: clean
 clean:
-	docker run --rm -it -v $(PWD):/project -w /project $(IMAGE_NAME) rm -rf build
+	docker run --rm -v $(PWD):/project -w /project $(IMAGE_NAME) rm -rf build
 
