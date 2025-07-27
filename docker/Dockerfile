@@ -24,9 +24,9 @@ COPY CMakeLists.txt ./
 
 COPY . .
 
-RUN cmake -DCOVERAGE=ON -B build -S .
-RUN cmake --build build
+#RUN cmake -DCOVERAGE=ON -B build -S .
+#RUN cmake --build build
 
-WORKDIR /project/build
+#WORKDIR /project/build
 
-#CMD ["/bin/bash"]
+CMD ["/bin/bash"]
