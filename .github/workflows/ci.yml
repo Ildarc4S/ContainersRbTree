@@ -43,7 +43,7 @@ jobs:
         run: ls -la build/coverage
 
       - name: Deploy coverage report to GitHub Pages
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/rb_tree' || github.ref == 'refs/heads/develop'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
