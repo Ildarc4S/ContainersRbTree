@@ -3,7 +3,7 @@ name: Cleanup deployments and build coverage
 on:
   push:
     branches:
-      - '*'           # запуск на все ветки
+      - '*'
   pull_request:
     branches:
       - '*'
@@ -27,9 +27,34 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build Docker image locally
-        run: make docker-build 
+      # Настройка QEMU и Buildx для расширенной сборки и кэширования
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Кэш Docker слоёв
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      # Сборка Docker-образа с использованием кэша
+      - name: Build Docker image with cache
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: docker/Dockerfile
+          tags: s21containers
+          load: true
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      # Основная сборка и вычисление покрытия из Makefile (как и было)
       - name: Run build and coverage using Makefile
         run: make build && make coverage
 
