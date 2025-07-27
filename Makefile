@@ -7,7 +7,7 @@ docker-build:
 
 .PHONY: build
 build:
-	docker run --rm -it -v $(PWD):/project -w /project/build $(IMAGE_NAME) bash -c "cmake -DCOVERAGE=ON -B . -S .. && cmake --build ."
+	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) bash -c "cmake -DCOVERAGE=ON -B . -S .. && cmake --build ."
 
 .PHONY: test
 test:
