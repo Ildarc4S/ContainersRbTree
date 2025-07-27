@@ -1,16 +1,19 @@
 # containers
 
-# Сборка тестов
-1. Ручками:
-```bash
-mkdir build
-cd build
-cmake ..
-make
-```
-И просто запускаете тесты вручную из папки `bin/tests/`
+Для сборки контейнеров используется `docker`.
+Необходимые зависимости: `docker`.
 
-2. Автоматически(скриптом):
+1. Сборка `docker`:
 ```bash
-bash build_and_run.sh
+make docker-build
 ```
+2. Сборка проекта через `cmake`:
+```bash 
+make build 
+```
+3. Доступные команды: 
+```bash
+make help
+```
+Сайт с покрытием кода доступен по ссылке:
+[Project Pages](https://ildarc4s.github.io/s21_containers/)
