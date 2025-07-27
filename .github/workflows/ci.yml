@@ -32,7 +32,6 @@ jobs:
 
       - name: Run build and coverage using Makefile
         run: make coverage
-        env:
 
       - name: Upload coverage report as artifact
         uses: actions/upload-artifact@v4
