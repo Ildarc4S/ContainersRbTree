@@ -31,7 +31,7 @@ jobs:
         run: make docker-build 
 
       - name: Run build and coverage using Makefile
-        run: make coverage
+        run: make build && make coverage
 
       - name: Upload coverage report as artifact
         uses: actions/upload-artifact@v4
