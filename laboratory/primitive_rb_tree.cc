@@ -39,6 +39,13 @@ class RBTree {
   void print_tree() const;
 };
 
+/*
+ *   x           y
+ *  / \         / \
+ * A   y   ->  x   C
+ *    / \     / \
+ *   B   C   A   B
+ */
 template <typename T, typename Compare>
 void RBTree<T, Compare>::rotate_left(Node* x) {
   if (!x->right_) {
@@ -65,9 +72,37 @@ void RBTree<T, Compare>::rotate_left(Node* x) {
   x->parent_ = y;
 }
 
+/*
+ *     x        y
+ *    / \      / \
+ *   y   C -> A   x
+ *  / \          / \
+ * A   B        B   C
+*/
 template <typename T, typename Compare>
 void RBTree<T, Compare>::rotate_right(Node* x) {
+  if (!x->left_) {
+    return;
+  }
 
+  Node* y = x->left_;
+  x->left_ = y->right_;
+
+  if (y->right_) {
+    y->right_->parent_ = x; // B->parent_ = x
+  }
+
+  y->parent_ = x->parent_;
+  if (!x->parent_) {
+    root_ = y;
+  } else if (x == x->parent_->left_) {
+    x->parent_->left_ = y;
+  } else {
+    x->parent_->right_ = y;
+  }
+
+  y->right_ = x;
+  x->parent_ = y;
 }
 
 template <typename T, typename Compare>
@@ -112,6 +147,7 @@ void RBTree<T, Compare>::print_tree() const {
       return;
   }
 
+  std::println("");
   std::vector<std::vector<Node*>> levels;
   std::vector<Node*> current_level{root_};
 
@@ -184,6 +220,8 @@ int main() {
   tree.insert(20);
   tree.print_tree();
   tree.rotate_left(tree.getRoot()->right_);
+  tree.print_tree();
+  tree.rotate_right(tree.getRoot()->right_);
   tree.print_tree();
 
   return 0;
