@@ -104,9 +104,50 @@ void RBTree<T, Compare>::rotate_right(Node* x) {
   y->right_ = x;
   x->parent_ = y;
 }
-
+/*
+ *    g(b)
+ *   /   \
+ *  y(r) u(r)
+ *  /
+ * x(r)
+*/
 template <typename T, typename Compare>
-void RBTree<T, Compare>::rebalance_insert(Node* node) {
+void RBTree<T, Compare>::rebalance_insert(Node* x) {
+  while(x->parent_ && x->parent_->color_ == Color::kRed ) {
+    if (x->parent_ == x->parent_->parent_->left_) {
+      // C - red
+      Node* u = x->parent_->parent_->right_;
+      if (u && u->color_ == Color::kRed) {
+        x->parent_->color_ = Color::kBlack;
+        u->color_ = Color::kBlack;
+        x->parent_->parent_->color_ = Color::kRed;
+        x = x->parent_->parent_; // move ptr to g
+      } else if (x == x->parent_->right_) {
+        x = x->parent_;
+        rotate_left(x);
+      } else {
+        x->parent_->color_ = Color::kBlack;
+        x->parent_->parent_->color_ = Color::kRed;
+        rotate_right(x->parent_->parent_);
+      }
+    } else {
+      Node* u = x->parent_->parent_->left_;
+      if (u && u->color_ == Color::kRed) {
+        x->parent_->color_ = Color::kBlack;
+        u->color_ = Color::kBlack;
+        x->parent_->parent_->color_ = Color::kRed;
+        x = x->parent_->parent_;
+      } else if(x == x->parent_->left_) {
+        x = x->parent_;
+        rotate_right(x);
+      } else {
+        x->parent_->color_ = Color::kBlack;
+        x->parent_->parent_->color_ = Color::kRed;
+        rotate_left(x->parent_->parent_);
+      }
+    }
+  }
+  root_->color_ = Color::kBlack;
 }
 
 template <typename T, typename Compare>
@@ -214,15 +255,10 @@ void RBTree<T, Compare>::print_tree() const {
 int main() {
   RBTree<int> tree;
   tree.insert(10);
+  tree.insert(5);
   tree.insert(15);
-  tree.insert(4);
-  tree.insert(4);
-  tree.insert(20);
+  tree.insert(3);
+  tree.insert(5);
   tree.print_tree();
-  tree.rotate_left(tree.getRoot()->right_);
-  tree.print_tree();
-  tree.rotate_right(tree.getRoot()->right_);
-  tree.print_tree();
-
   return 0;
 }
