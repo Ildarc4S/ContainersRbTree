@@ -32,11 +32,19 @@ class RBTree {
  public:
   Node* getRoot() { return root_; }
   void rebalance_insert(Node* node);
+
   void rotate_left(Node* x);
   void rotate_right(Node* x);
 
-  void insert(const T& value);
+  void transplant(Node* u, Node* v);
+  Node* minimum(Node* node);
+  Node* find_node(const T& value);
+  void remove(Node* node);
+
   void print_tree() const;
+
+  void insert(const T& value);
+  void erase(const T& value);
 };
 
 /*
@@ -104,6 +112,30 @@ void RBTree<T, Compare>::rotate_right(Node* x) {
   y->right_ = x;
   x->parent_ = y;
 }
+
+template <typename T, typename Compare>
+void RBTree<T, Compare>::transplant(Node* u, Node* v) {
+  if (u->parent_ == nullptr) {
+    root_ = v;
+  } else if (u == u->parent_->left_) {
+    u->parent_->left_ = v;
+  } else {
+    u->parent_->right_ = v;
+  }
+
+  if (v != nullptr) {
+    v->parent_ = u->parent_;
+  }
+}
+
+template <typename T, typename Compare>
+RBTree<T, Compare>::Node* RBTree<T, Compare>::minimum(Node* node) {
+  while (node->left_ != nullptr) {
+    node = node->left_;
+  }
+  return node;
+}
+
 /*
  *    g(b)
  *   /   \
@@ -260,5 +292,6 @@ int main() {
   tree.insert(3);
   tree.insert(5);
   tree.print_tree();
+  std::println("{}", tree.minimum(tree.getRoot())->value_);
   return 0;
 }
