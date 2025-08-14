@@ -33,6 +33,7 @@ class RBTree {
  public:
   Node* getRoot() { return root_; }
   void rebalance_insert(Node* node);
+  void rebalance_erase(Node* node);
 
   void rotate_left(Node* x);
   void rotate_right(Node* x);
@@ -192,8 +193,11 @@ void RBTree<T, Compare>::remove(Node* node) {
       }
       y->color_ = node->color_;
     }
+  }
+  delete node;
 
-    delete node;
+  if (y_original_color == Color::kBlack) {
+    rebalance_erase(x);
   }
 }
 
@@ -242,6 +246,12 @@ void RBTree<T, Compare>::rebalance_insert(Node* x) {
   }
   root_->color_ = Color::kBlack;
 }
+
+template <typename T, typename Compare>
+void RBTree<T, Compare>::rebalance_erase(Node* x) {
+  
+}
+
 
 template <typename T, typename Compare>
 void RBTree<T, Compare>::insert(const T& value) {
