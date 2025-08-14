@@ -1,3 +1,4 @@
+#include <csignal>
 #include <print>
 #include <memory>
 #include <vector>
@@ -129,11 +130,71 @@ void RBTree<T, Compare>::transplant(Node* u, Node* v) {
 }
 
 template <typename T, typename Compare>
-RBTree<T, Compare>::Node* RBTree<T, Compare>::minimum(Node* node) {
+RBTree<T, Compare>::Node*
+RBTree<T, Compare>::minimum(Node* node) {
   while (node->left_ != nullptr) {
     node = node->left_;
   }
   return node;
+}
+
+template <typename T, typename Compare>
+RBTree<T, Compare>::Node*
+RBTree<T, Compare>::find_node(const T& value) {
+  Node* curr = root_;
+  bool stop = false;
+  while(curr != nullptr && !stop) {
+    if (compare_(value, curr->value_)) {
+      curr = curr->left_;
+    } else if(compare_(curr->value_, value)) {
+      curr = curr->right_;
+    } else {
+      stop = true;
+    }
+  }
+  return curr;
+}
+
+template <typename T, typename Compare>
+void RBTree<T, Compare>::remove(Node* node) {
+  if (node == nullptr) {
+    return;
+  }
+
+  Node* y = node;
+  Color y_original_color = y->color_;
+  Node* x = nullptr;
+
+  if (node->left_ == nullptr) {
+    x = node->right_;
+    transplant(node, node->right_);
+  } else if (node->right_ == nullptr) {
+    x = node->left_;
+    transplant(node, node->left_);
+  } else {
+    y = minimum(node->right_);
+    y_original_color = y->color_;
+    x = y->right_;
+
+    if (y->parent_ == node && x != nullptr) {
+        x->parent_ = y;
+    } else {
+      transplant(y, y->right_);
+      y->right_ = node->right_;
+      if (y->right_ != nullptr) {
+        y->right_->parent_ = y;
+      }
+
+      transplant(node, y);
+      y->left_ = node->left_;
+      if (y->left_ != nullptr) {
+        y->left_->parent_ = y;
+      }
+      y->color_ = node->color_;
+    }
+
+    delete node;
+  }
 }
 
 /*
@@ -293,5 +354,6 @@ int main() {
   tree.insert(5);
   tree.print_tree();
   std::println("{}", tree.minimum(tree.getRoot())->value_);
+  std::println("{}", tree.find_node(5)->value_);
   return 0;
 }
