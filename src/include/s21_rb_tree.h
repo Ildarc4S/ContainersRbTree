@@ -6,7 +6,7 @@
 namespace s21 {
 
 class RbTree {
-rb_tree::RbTreeColor color;
+  rb_tree::NodeColor color;
 };
 
 } //  s21

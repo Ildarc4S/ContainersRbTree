@@ -1,35 +1,34 @@
 #ifndef _S21_RB_TREE_UTILS_
 #define _S21_RB_TREE_UTILS_
 
-#include <iostream>
 #include <memory>
 
 namespace s21 {
 namespace rb_tree {
 
-enum class RbTreeColor : std::uint8_t {
+enum class NodeColor : std::uint8_t {
   kBlack,
   kRed
 };
 
 template <typename Ptr_>
 struct NodeBase {
-  using BasePtr = std::pointer_traits<Ptr_>::template rebind<NodeBase>;
+  using BasePtr_ = std::pointer_traits<Ptr_>::template rebind<NodeBase>;
 
-  RbTreeColor color_;
-  BasePtr parent_;
-  BasePtr right_;
-  BasePtr left_;
+  NodeColor color_;
+  BasePtr_ parent_;
+  BasePtr_ right_;
+  BasePtr_ left_;
 
-  static BasePtr Minimum(BasePtr elm) noexcept;
-  static BasePtr Maximum(BasePtr elm) noexcept;
-  BasePtr GetBasePtr() const noexcept;
+  static BasePtr_ Minimum(BasePtr_ elm) noexcept;
+  static BasePtr_ Maximum(BasePtr_ elm) noexcept;
+  BasePtr_ GetBasePtr() const noexcept;
 };
 
 template <typename NodeBase_>
 struct Header {
  private:
-  using BasePtr = typename NodeBase_::BasePtr;
+  using BasePtr_ = typename NodeBase_::BasePtr;
 
  public:
   Header() noexcept;
@@ -47,8 +46,8 @@ struct Node : public NodeBase<
               typename std::pointer_traits<ValPtr_>::
               template rebind<void>> {
 
-  using ValueType = std::pointer_traits<ValPtr_>::element_type;
-  using NodePtr = std::pointer_traits<ValPtr_>:: template rebind<Node>;
+  using ValueType_ = std::pointer_traits<ValPtr_>::element_type;
+  using NodePtr_ = std::pointer_traits<ValPtr_>:: template rebind<Node>::other;
 
   Node() noexcept ;
   Node(Node&& other) = delete;
@@ -56,14 +55,14 @@ struct Node : public NodeBase<
   union Storage_ {
     Storage_() noexcept {};
     ~Storage_() {};
-    ValueType data_;
+    ValueType_ data_;
   };
 
   Storage_ storage_;
 
-  ValueType* Valptr();
-  ValueType const*  Valptr() const;
-  NodePtr Nodeptr() noexcept;
+  ValueType_* Valptr();
+  ValueType_ const*  Valptr() const;
+  NodePtr_ Nodeptr() noexcept;
 };
 
 template <typename KeyCompare_>
@@ -84,9 +83,12 @@ struct Iterator {
   template <typename T>
   using MaybeConst_ = std::conditional_t<IsConst_, const T, T>;
 
-  using Node =  Node<ValPtr_>;
-  using NodeBase = NodeBase<std::pointer_traits<ValPtr_>:: template rebind<void>>;
-  using BasePtr = typename NodeBase::BasePtr;
+  using Node_ = Node<ValPtr_>;
+  using NodeBase_ = NodeBase<
+                      typename std::pointer_traits<ValPtr_>::
+                      template rebind<void>::other>;
+  using BasePtr_ = std::pointer_traits<ValPtr_>::
+                      template rebind<NodeBase_>::other;
 
   using value_type = std::pointer_traits<ValPtr_>::element_type;
   using reference = MaybeConst_<value_type>&;
@@ -98,7 +100,7 @@ struct Iterator {
   Iterator() noexcept = default;
   Iterator(const Iterator&) = default;
 
-  constexpr explicit Iterator(BasePtr node) noexcept;
+  constexpr explicit Iterator(BasePtr_ node) noexcept;
   constexpr Iterator(const Iterator<false, ValPtr_>& it) requires IsConst_;
 
   [[nodiscard]] reference operator*() const noexcept;
@@ -110,12 +112,14 @@ struct Iterator {
   constexpr Iterator& operator--() noexcept;
   constexpr Iterator& operator--(int) noexcept;
 
-  [[nodiscard]] friend bool operator==(const Iterator& first,
-                                       const Iterator& second);
-  [[nodiscard]] friend bool operator!=(const Iterator& first,
-                                       const Iterator& second);
+  template <bool B, typename T>
+  friend bool operator==(const Iterator<B, T>& first,
+                                       const Iterator<B, T>& second);
+  template <bool B, typename T>
+  friend bool operator!=(const Iterator<B, T>& first,
+                                       const Iterator<B, T>& second);
 
-  BasePtr node_;
+  BasePtr_ node_;
 };
 
 } //  rb_tree
