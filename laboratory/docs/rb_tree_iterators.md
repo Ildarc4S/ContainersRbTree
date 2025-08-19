@@ -1,6 +1,6 @@
 # Итераторы в STL _Rb_tree
 
-Итераторы представлены в виде структур `_Iterator`,`iterator`,`const_iterator`. В `_Rb_tree` итераторы двунаправленные(bidirectional), поддерживающие:
+Итераторы представлены в виде структур `_Iterator`,`_Rb_tree_iterator`,`_Rb_tree_const_iterator`. В `_Rb_tree` итераторы двунаправленные(bidirectional), поддерживающие:
 - Перемещение вперед (operator++)
 - Перемещение назад (operator--)
 - Доступ к элементам (operator* и operator->)
@@ -637,4 +637,167 @@ operator!=(const _Iterator& __x, const _Iterator& __y) _GLIBCXX_NOEXCEPT
 _Base_ptr _M_node;
 ```
 Единственное поле - указатель на текущий узел дерева. Все операции итератора работают с этим указателем.
+
+# _Rb_tree_iterator и _Rb_tree_const_iterator 
+Это старые версии итераторов, `_Iterator` более современная версия, появившаяся для:
+- Поддержки новых возможностей C++ (аллокаторы с fancy pointers)
+- Унификации кода для константных и неконстантных итераторов
+- Более эффективных специализаций
+## **_Rb_tree_iterator:**
+```cpp
+template<typename _Tp>
+struct _Rb_tree_iterator
+{
+  typedef _Tp  value_type;
+  typedef _Tp& reference;
+  typedef _Tp* pointer;
+
+  typedef bidirectional_iterator_tag iterator_category;
+  typedef ptrdiff_t			 difference_type;
+
+  typedef _Rb_tree_node_base::_Base_ptr	_Base_ptr;
+  typedef _Rb_tree_node<_Tp>*		_Node_ptr;
+
+  _Rb_tree_iterator() _GLIBCXX_NOEXCEPT
+  : _M_node() { }
+
+  explicit
+  _Rb_tree_iterator(_Base_ptr __x) _GLIBCXX_NOEXCEPT
+  : _M_node(__x) { }
+
+  reference
+  operator*() const _GLIBCXX_NOEXCEPT
+  { return *static_cast<_Node_ptr>(_M_node)->_M_valptr(); }
+
+  pointer
+  operator->() const _GLIBCXX_NOEXCEPT
+  { return static_cast<_Node_ptr>(_M_node)->_M_valptr(); }
+
+  _Rb_tree_iterator&
+  operator++() _GLIBCXX_NOEXCEPT
+  {
+_M_node = _Rb_tree_increment(_M_node);
+return *this;
+  }
+
+  _Rb_tree_iterator
+  operator++(int) _GLIBCXX_NOEXCEPT
+  {
+_Rb_tree_iterator __tmp = *this;
+_M_node = _Rb_tree_increment(_M_node);
+return __tmp;
+  }
+
+  _Rb_tree_iterator&
+  operator--() _GLIBCXX_NOEXCEPT
+  {
+_M_node = _Rb_tree_decrement(_M_node);
+return *this;
+  }
+
+  _Rb_tree_iterator
+  operator--(int) _GLIBCXX_NOEXCEPT
+  {
+_Rb_tree_iterator __tmp = *this;
+_M_node = _Rb_tree_decrement(_M_node);
+return __tmp;
+  }
+
+  friend bool
+  operator==(const _Rb_tree_iterator& __x,
+     const _Rb_tree_iterator& __y) _GLIBCXX_NOEXCEPT
+  { return __x._M_node == __y._M_node; }
+
+#if ! __cpp_lib_three_way_comparison
+  friend bool
+  operator!=(const _Rb_tree_iterator& __x,
+     const _Rb_tree_iterator& __y) _GLIBCXX_NOEXCEPT
+  { return __x._M_node != __y._M_node; }
+#endif
+
+  _Base_ptr _M_node;
+};
+```
+
+
+## **_Rb_tree_const_iterator:**
+```cpp
+template<typename _Tp>
+struct _Rb_tree_const_iterator
+{
+  typedef _Tp	 value_type;
+  typedef const _Tp& reference;
+  typedef const _Tp* pointer;
+
+  typedef _Rb_tree_iterator<_Tp> iterator;
+
+  typedef bidirectional_iterator_tag iterator_category;
+  typedef ptrdiff_t			 difference_type;
+
+  typedef _Rb_tree_node_base::_Base_ptr	_Base_ptr;
+  typedef const _Rb_tree_node<_Tp>*		_Node_ptr;
+
+  _Rb_tree_const_iterator() _GLIBCXX_NOEXCEPT
+  : _M_node() { }
+
+  explicit
+  _Rb_tree_const_iterator(_Base_ptr __x) _GLIBCXX_NOEXCEPT
+  : _M_node(__x) { }
+
+  _Rb_tree_const_iterator(const iterator& __it) _GLIBCXX_NOEXCEPT
+  : _M_node(__it._M_node) { }
+
+  reference
+  operator*() const _GLIBCXX_NOEXCEPT
+  { return *static_cast<_Node_ptr>(_M_node)->_M_valptr(); }
+
+  pointer
+  operator->() const _GLIBCXX_NOEXCEPT
+  { return static_cast<_Node_ptr>(_M_node)->_M_valptr(); }
+
+  _Rb_tree_const_iterator&
+  operator++() _GLIBCXX_NOEXCEPT
+  {
+_M_node = _Rb_tree_increment(_M_node);
+return *this;
+  }
+
+  _Rb_tree_const_iterator
+  operator++(int) _GLIBCXX_NOEXCEPT
+  {
+_Rb_tree_const_iterator __tmp = *this;
+_M_node = _Rb_tree_increment(_M_node);
+return __tmp;
+  }
+
+  _Rb_tree_const_iterator&
+  operator--() _GLIBCXX_NOEXCEPT
+  {
+_M_node = _Rb_tree_decrement(_M_node);
+return *this;
+  }
+
+  _Rb_tree_const_iterator
+  operator--(int) _GLIBCXX_NOEXCEPT
+  {
+_Rb_tree_const_iterator __tmp = *this;
+_M_node = _Rb_tree_decrement(_M_node);
+return __tmp;
+  }
+
+  friend bool
+  operator==(const _Rb_tree_const_iterator& __x,
+     const _Rb_tree_const_iterator& __y) _GLIBCXX_NOEXCEPT
+  { return __x._M_node == __y._M_node; }
+
+#if ! __cpp_lib_three_way_comparison
+  friend bool
+  operator!=(const _Rb_tree_const_iterator& __x,
+     const _Rb_tree_const_iterator& __y) _GLIBCXX_NOEXCEPT
+  { return __x._M_node != __y._M_node; }
+#endif
+
+  _Base_ptr _M_node;
+};
+```
 
