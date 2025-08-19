@@ -73,16 +73,6 @@ namespace __rb_tree
   };
 } // namespace __rb_tree
 
-void
-_Rb_tree_insert_and_rebalance(const bool __insert_left,
-      _Rb_tree_node_base* __x,
-      _Rb_tree_node_base* __p,
-      _Rb_tree_node_base& __header);
-
-_Rb_tree_node_base*
-_Rb_tree_rebalance_for_erase(_Rb_tree_node_base* const __z,
-           _Rb_tree_node_base& __header);
-
 namespace __rb_tree
 {
   template<bool _Const, typename _ValPtr>
