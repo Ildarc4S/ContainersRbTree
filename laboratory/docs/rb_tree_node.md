@@ -410,4 +410,79 @@ void _M_reset() {
      return iterator(&_M_header); // Фиктивный узел
    }
    ```
+# _Rb_tree_key_compare
+Эта структура — обёртка над компаратором (`_Key_compare`), который используется в красно-чёрном дереве для сравнения ключей.  
+
+Её основные задачи:  
+1. **Хранение компаратора** (`_M_key_compare`).  
+2. **Гарантия корректной инициализации** (включая поддержку `noexcept`).  
+3. **Поддержка копирования и перемещения** (для работы с контейнерами в C++11 и новее).  
+
+```cpp
+template<typename _Key_compare>
+struct _Rb_tree_key_compare
+{
+  _Key_compare		_M_key_compare;
+
+  _Rb_tree_key_compare()
+  _GLIBCXX_NOEXCEPT_IF(
+   is_nothrow_default_constructible<_Key_compare>::value)
+  : _M_key_compare() {
+  }
+
+  _Rb_tree_key_compare(const _Key_compare& __comp)
+  : _M_key_compare(__comp) {
+  }
+
+  _Rb_tree_key_compare(const _Rb_tree_key_compare&) = default;
+
+  _Rb_tree_key_compare(_Rb_tree_key_compare&& __x)
+   noexcept(is_nothrow_copy_constructible<_Key_compare>::value)
+  : _M_key_compare(__x._M_key_compare) {
+  }
+};
+```
+## **Пошаговый разбор кода**  
+
+### **1. Шаблонная структура с компаратором**  
+```cpp
+template<typename _Key_compare>
+struct _Rb_tree_key_compare
+```
+- `_Key_compare` — тип компаратора (например, `std::less<Key>` для `std::map<Key, Value>`).  
+
+### **2. Поле `_M_key_compare`**  
+```cpp
+_Key_compare _M_key_compare;
+```
+- Хранит объект компаратора, который будет использоваться для сравнения ключей.  
+
+### **3. Конструктор по умолчанию**  
+```cpp
+_Rb_tree_key_compare()
+_GLIBCXX_NOEXCEPT_IF(is_nothrow_default_constructible<_Key_compare>::value)
+: _M_key_compare() {}
+```
+- Инициализирует `_M_key_compare` значением по умолчанию.  
+
+### **4. Конструктор с явным компаратором**  
+```cpp
+_Rb_tree_key_compare(const _Key_compare& __comp)
+: _M_key_compare(__comp) {}
+```
+- Позволяет передать внешний компаратор (например, кастомный `std::greater<Key>`).  
+
+### **5. Конструктор копирования (по умолчанию)**  
+```cpp
+_Rb_tree_key_compare(const _Rb_tree_key_compare&) = default;
+```
+- Позволяет копировать объект целиком (например, при копировании `std::map`).  
+
+### **6. Конструктор перемещения**  
+```cpp
+_Rb_tree_key_compare(_Rb_tree_key_compare&& __x)
+noexcept(is_nothrow_copy_constructible<_Key_compare>::value)
+: _M_key_compare(__x._M_key_compare) {}
+```
+- Перемещает компаратор из `__x` в новый объект.  
 
