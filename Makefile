@@ -51,7 +51,7 @@ valgrind-%:
 
 .PHONY: coverage
 coverage:
-	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target coverage_all
+	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target coverage
 
 .PHONY: help
 help:
