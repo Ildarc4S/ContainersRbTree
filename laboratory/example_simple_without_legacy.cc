@@ -73,155 +73,91 @@ namespace __rb_tree
   };
 } // namespace __rb_tree
 
-  _Rb_tree_node_base* _Rb_tree_increment(_Rb_tree_node_base* __x);
-  _Rb_tree_node_base* _Rb_tree_decrement(_Rb_tree_node_base* __x);
+void
+_Rb_tree_insert_and_rebalance(const bool __insert_left,
+      _Rb_tree_node_base* __x,
+      _Rb_tree_node_base* __p,
+      _Rb_tree_node_base& __header);
 
-  template<typename _Tp>
-  struct _Rb_tree_iterator
-  {
-    typedef _Tp  value_type;
-    typedef _Tp& reference;
-    typedef _Tp* pointer;
-
-    typedef bidirectional_iterator_tag iterator_category;
-    typedef ptrdiff_t			 difference_type;
-
-    typedef _Rb_tree_node_base::_Base_ptr	_Base_ptr;
-    typedef _Rb_tree_node<_Tp>*		_Node_ptr;
-
-    _Rb_tree_iterator();
-
-    explicit _Rb_tree_iterator(_Base_ptr __x);
-
-    reference operator*();
-    pointer   operator->() const;
-
-    _Rb_tree_iterator& operator++();
-    _Rb_tree_iterator  operator++(int);
-    _Rb_tree_iterator& operator--();
-    _Rb_tree_iterator  operator--(int);
-    friend bool operator==(const _Rb_tree_iterator& __x,
-                           const _Rb_tree_iterator& __y);
-    _Base_ptr _M_node;
-  };
-
-  template<typename _Tp>
-  struct _Rb_tree_const_iterator
-  {
-    typedef _Tp	 value_type;
-    typedef const _Tp& reference;
-    typedef const _Tp* pointer;
-
-    typedef _Rb_tree_iterator<_Tp> iterator;
-
-    typedef bidirectional_iterator_tag iterator_category;
-    typedef ptrdiff_t			 difference_type;
-
-    typedef _Rb_tree_node_base::_Base_ptr	_Base_ptr;
-    typedef const _Rb_tree_node<_Tp>*		_Node_ptr;
-
-    _Rb_tree_const_iterator();
-    explicit _Rb_tree_const_iterator(_Base_ptr __x);
-    _Rb_tree_const_iterator(const iterator& __it);
-
-    reference operator*() const;
-    pointer   operator->() const;
-
-    _Rb_tree_const_iterator& operator++();
-    _Rb_tree_const_iterator  operator++(int);
-    _Rb_tree_const_iterator& operator--();
-    _Rb_tree_const_iterator  operator--(int);
-
-    friend bool operator==(const _Rb_tree_const_iterator& __x,
-                           const _Rb_tree_const_iterator& __y);
-    _Base_ptr _M_node;
-  };
-
-  void
-  _Rb_tree_insert_and_rebalance(const bool __insert_left,
-				_Rb_tree_node_base* __x,
-				_Rb_tree_node_base* __p,
-				_Rb_tree_node_base& __header);
-
-  _Rb_tree_node_base*
-  _Rb_tree_rebalance_for_erase(_Rb_tree_node_base* const __z,
-			       _Rb_tree_node_base& __header);
+_Rb_tree_node_base*
+_Rb_tree_rebalance_for_erase(_Rb_tree_node_base* const __z,
+           _Rb_tree_node_base& __header);
 
 namespace __rb_tree
 {
   template<bool _Const, typename _ValPtr>
-    struct _Iterator
-    {
-      template<typename _Tp>
-	using __maybe_const = __conditional_t<_Const, const _Tp, _Tp>;
+  struct _Iterator
+  {
+    template<typename _Tp>
+    using __maybe_const = __conditional_t<_Const, const _Tp, _Tp>;
 
-      using __ptr_traits =	pointer_traits<_ValPtr>;
-      using value_type =	typename __ptr_traits::element_type;
-      using reference =		__maybe_const<value_type>&;
-      using pointer =		__maybe_const<value_type>*;
+    using __ptr_traits =	pointer_traits<_ValPtr>;
+    using value_type =	typename __ptr_traits::element_type;
+    using reference =		__maybe_const<value_type>&;
+    using pointer =		__maybe_const<value_type>*;
 
-      using iterator_category =	bidirectional_iterator_tag;
-      using difference_type =	ptrdiff_t;
+    using iterator_category =	bidirectional_iterator_tag;
+    using difference_type =	ptrdiff_t;
 
-      using _Node = __rb_tree::_Node<_ValPtr>;
-      using _Node_base = __rb_tree::_Node_base<__ptr_rebind<_ValPtr, void>>;
-      using _Base_ptr =	 typename _Node_base::_Base_ptr;
+    using _Node = __rb_tree::_Node<_ValPtr>;
+    using _Node_base = __rb_tree::_Node_base<__ptr_rebind<_ValPtr, void>>;
+    using _Base_ptr =	 typename _Node_base::_Base_ptr;
 
-      _Iterator() noexcept;
+    _Iterator() noexcept;
 
-      constexpr explicit
-      _Iterator(_Base_ptr __x) noexcept;
+    constexpr explicit
+    _Iterator(_Base_ptr __x) noexcept;
 
-      _Iterator(const _Iterator&) = default;
-      _Iterator& operator=(const _Iterator&) = default;
+    _Iterator(const _Iterator&) = default;
+    _Iterator& operator=(const _Iterator&) = default;
 
-      constexpr
-      _Iterator(const _Iterator<false, _ValPtr>& __it) requires _Const;
+    constexpr
+    _Iterator(const _Iterator<false, _ValPtr>& __it) requires _Const;
 
-      [[nodiscard]]
-      reference operator*() const noexcept;
+    [[nodiscard]]
+    reference operator*() const noexcept;
 
-      [[nodiscard]]
-      pointer operator->() const noexcept;
+    [[nodiscard]]
+    pointer operator->() const noexcept;
 
-      _Iterator& operator++() noexcept;
-      _Iterator  operator++(int) noexcept;
-      _Iterator& operator--() noexcept;
-      _Iterator  operator--(int) noexcept;
+    _Iterator& operator++() noexcept;
+    _Iterator  operator++(int) noexcept;
+    _Iterator& operator--() noexcept;
+    _Iterator  operator--(int) noexcept;
 
-      [[nodiscard]]
-      friend bool operator==(const _Iterator& __x, const _Iterator& __y);
+    [[nodiscard]]
+    friend bool operator==(const _Iterator& __x, const _Iterator& __y);
 
-      _Base_ptr _M_node;
-    };
+    _Base_ptr _M_node;
+  };
 
   // Determine the node and iterator types used by std::_Rb_tree.
   template<typename _Val, typename _Ptr>
-    struct _Node_traits;
+  struct _Node_traits;
 
   template<typename _Val, typename _ValPtr>
-    struct _Node_traits
-    {
-      using _Node = __rb_tree::_Node<_ValPtr>;
-      using _Node_ptr = __ptr_rebind<_ValPtr, _Node>;
-      using _Node_base = __rb_tree::_Node_base<__ptr_rebind<_ValPtr, void>>;
-      using _Base_ptr = __ptr_rebind<_ValPtr, _Node_base>;
-      using _Header_t = __rb_tree::_Header<_Node_base>;
-      using _Iterator = __rb_tree::_Iterator<false, _ValPtr>;
-      using _Const_iterator = __rb_tree::_Iterator<true, _ValPtr>;
+  struct _Node_traits
+  {
+    using _Node = __rb_tree::_Node<_ValPtr>;
+    using _Node_ptr = __ptr_rebind<_ValPtr, _Node>;
+    using _Node_base = __rb_tree::_Node_base<__ptr_rebind<_ValPtr, void>>;
+    using _Base_ptr = __ptr_rebind<_ValPtr, _Node_base>;
+    using _Header_t = __rb_tree::_Header<_Node_base>;
+    using _Iterator = __rb_tree::_Iterator<false, _ValPtr>;
+    using _Const_iterator = __rb_tree::_Iterator<true, _ValPtr>;
 
-      static void _Rotate_left(_Base_ptr __x, _Base_ptr& __root);
-      static void _Rotate_right(_Base_ptr __x, _Base_ptr& __root);
-      static void _S_insert_and_rebalance(const bool __insert_left,
-			                                    _Base_ptr __x, _Base_ptr __p,
-			                                    _Node_base& __header);
-      static _Base_ptr _S_rebalance_for_erase(_Base_ptr __z,
-                                              _Node_base& __header);
-    };
+    static void _Rotate_left(_Base_ptr __x, _Base_ptr& __root);
+    static void _Rotate_right(_Base_ptr __x, _Base_ptr& __root);
+    static void _S_insert_and_rebalance(const bool __insert_left,
+                                        _Base_ptr __x, _Base_ptr __p,
+                                        _Node_base& __header);
+    static _Base_ptr _S_rebalance_for_erase(_Base_ptr __z,
+                                            _Node_base& __header);
+  };
 } // namespace __rb_tree
 
 template<typename _Tree1, typename _Cmp2>
-  struct _Rb_tree_merge_helper { };
+struct _Rb_tree_merge_helper { };
 
 template<typename _Key, typename _Val, typename _KeyOfValue,
          typename _Compare, typename _Alloc = allocator<_Val> >
@@ -312,8 +248,8 @@ template<typename _Key, typename _Val, typename _KeyOfValue,
     struct _Rb_tree_impl
       : public _Node_allocator
       , public _Rb_tree_key_compare<_Key_compare>
-      , public _Header_t
-    {
+      , public _Header_t {
+
       typedef _Rb_tree_key_compare<_Key_compare> _Base_key_compare;
 
       _Rb_tree_impl();
