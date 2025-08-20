@@ -7,6 +7,10 @@ namespace s21 {
 
 class RbTree {
   rb_tree::NodeColor color;
+public:
+  RbTree() {
+    std::cout << "saasd";
+  }
 };
 
 } //  s21

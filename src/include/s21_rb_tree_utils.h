@@ -28,7 +28,7 @@ struct NodeBase {
 template <typename NodeBase_>
 struct Header {
  private:
-  using BasePtr_ = typename NodeBase_::BasePtr;
+  using BasePtr_ = typename NodeBase_::BasePtr_;
 
  public:
   Header() noexcept;
@@ -47,7 +47,7 @@ struct Node : public NodeBase<
               template rebind<void>> {
 
   using ValueType_ = std::pointer_traits<ValPtr_>::element_type;
-  using NodePtr_ = std::pointer_traits<ValPtr_>:: template rebind<Node>::other;
+  using NodePtr_ = std::pointer_traits<ValPtr_>:: template rebind<Node>;
 
   Node() noexcept ;
   Node(Node&& other) = delete;
@@ -86,9 +86,9 @@ struct Iterator {
   using Node_ = Node<ValPtr_>;
   using NodeBase_ = NodeBase<
                       typename std::pointer_traits<ValPtr_>::
-                      template rebind<void>::other>;
+                      template rebind<void>>;
   using BasePtr_ = std::pointer_traits<ValPtr_>::
-                      template rebind<NodeBase_>::other;
+                      template rebind<NodeBase_>;
 
   using value_type = std::pointer_traits<ValPtr_>::element_type;
   using reference = MaybeConst_<value_type>&;

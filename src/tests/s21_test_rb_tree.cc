@@ -3,5 +3,5 @@
 #include "s21_rb_tree.h"
 
 TEST(RBTreeTest, ExampleTest) {
-  
+  s21::RbTree r;
 }
