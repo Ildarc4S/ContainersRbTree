@@ -2,10 +2,14 @@
 
 :root {
   --textColor: aliceblue;
-  --mainBg: #131313;
+  --mainBg: #1e1e1e; /* ← БЫЛО #131313, СТАЛО #1e1e1e (светлее) */
   --linkColor: aquamarine;
+  --lighter: #ffffff10; /* ← Также можно сделать светлее */
 
-  --lighter: #ffffff05;
+  /* Добавим переменные для покрытия */
+  --lineCov-bg: #004d40;
+  --lineCov-text: #a7ffeb;
+  --lineNoCov-bg: #500000;
 }
 
 a,
@@ -45,17 +49,20 @@ td.coverBar > table {
 }
 
 /*code-related style is below this line*/
+span.tlaGNC {
+    background-color: var(--lineCov-bg);
+}
 
 td.lineCov,
 span.lineCov {
-  background-color: #004d40; /* Темно-зеленый фон */
-  color: #a7ffeb;            /* Светло-зеленый текст */
+  background-color: var(--lineCov-bg);
+  color: var(--lineCov-text);
   font-weight: bold;
 }
 
 td.lineNoCov,
 span.lineNoCov {
-  background-color: rgb(50, 0, 0);
+  background-color: var(--lineNoCov-bg);
 }
 
 td.headerCovTableEntryHi
