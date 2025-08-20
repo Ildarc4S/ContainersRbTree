@@ -1,0 +1,80 @@
+@import url("https://fonts.googleapis.com/css?family=Source Code Pro|Quicksand");
+
+:root {
+  --textColor: aliceblue;
+  --mainBg: #131313;
+  --linkColor: aquamarine;
+
+  --lighter: #ffffff05;
+}
+
+a,
+a:visited {
+  color: var(--linkColor);
+  text-decoration: none;
+}
+
+body center table tbody tr:nth-child(even):not(:nth-child(2)) {
+  background-color: var(--lighter);
+}
+
+body {
+  font-family: "Quicksand", "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS",
+    sans-serif;
+  letter-spacing: 0.03em;
+  background-color: var(--mainBg);
+  color: var(--textColor);
+}
+
+center table {
+  background-color: var(--lighter);
+  border-radius: 1em;
+  padding: 1em;
+  padding-top: 0;
+}
+
+td,
+th {
+  padding: 0.5em;
+}
+
+td.coverBar > table {
+  background: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+/*code-related style is below this line*/
+
+td.lineCov,
+span.lineCov {
+  background-color: #004d40; /* Темно-зеленый фон */
+  color: #a7ffeb;            /* Светло-зеленый текст */
+  font-weight: bold;
+}
+
+td.lineNoCov,
+span.lineNoCov {
+  background-color: rgb(50, 0, 0);
+}
+
+td.headerCovTableEntryHi
+{
+  text-align: right;
+  color: #000000;
+  font-family: sans-serif;
+  font-weight: bold;
+  white-space: nowrap;
+  padding-left: 12px;
+  padding-right: 4px;
+  background-color: #a7fc9d;
+}
+
+.source > a {
+  color: var(--textColor);
+  font-family: "Source Code Pro", "Courier New", Courier, monospace;
+}
+
+.source {
+  font-size: 1.1em;
+}

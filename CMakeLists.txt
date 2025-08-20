@@ -35,6 +35,7 @@ if(COVERAGE)
             COMMAND ${GENHTML} 
               coverage.filtered.info 
               --output-directory coverage
+              -c ${CMAKE_SOURCE_DIR}/gcov/gcov.css
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             COMMENT "Generating code coverage report"
         )
