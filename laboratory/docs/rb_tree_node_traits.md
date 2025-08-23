@@ -4,8 +4,7 @@
 
 ```cpp
 template<typename _Val, typename _ValPtr>
-struct _Node_traits
-{
+struct _Node_traits {
   using _Node = __rb_tree::_Node<_ValPtr>;
   using _Node_ptr = __ptr_rebind<_ValPtr, _Node>;
   using _Node_base = __rb_tree::_Node_base<__ptr_rebind<_ValPtr, void>>;
