@@ -2,8 +2,10 @@
 #define _S21_RB_TREE_
 
 #include "s21_rb_tree_utils.h"
+#include <queue>
 
 namespace s21 {
+
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_ = std::allocator<Val_> >
 class RbTree {
@@ -41,9 +43,6 @@ private:
   BasePtr_ GetRight(BasePtr_ node) const noexcept;
   const Key_& GetKey(const BasePtr_ node);
 
-  iterator begin() noexcept;
-  iterator end() noexcept;
-
   NodePtr_ NewNode();
   void DeleteNode(NodePtr_ node_ptr);
 
@@ -57,11 +56,12 @@ private:
   iterator InsertNode(BasePtr_ node, BasePtr_ parent, Arg_&& arg);
 
   std::pair<BasePtr_, BasePtr_> GetInsertUniquePos(const key_type& k);
+  std::pair<BasePtr_, BasePtr_> GetInsertHintUniquePos(const_iterator hint, const key_type& key);
 
   void RotateLeft(BasePtr_ x);
   void RotateRight(BasePtr_ x);
-
   void RebalanceInsert(BasePtr_ x);
+  // void RebalanceErase(BasePtr_ x);
 
 public:
 
@@ -70,6 +70,50 @@ public:
   template<typename Arg_>
   std::pair<iterator, bool> InsertUnique(Arg_&& x);
 
+  template<typename Arg_>
+  iterator InsertHintUnique(iterator hint, Arg_&& x);
+
+  iterator LowerBound(const key_type& key);
+  iterator LowerBound(BasePtr_ x, BasePtr_ y, const Key_& key);
+
+  iterator begin() noexcept;
+  iterator end() noexcept;
+
+  void PrintTreeByLevelsSimple() {
+    if (!impl_.header_.parent_ || impl_.header_.parent_ == GetEnd()) {
+      std::cout << "Tree is empty!" << std::endl;
+      return;
+    }
+
+    std::cout << "Tree:" << std::endl;
+
+    std::queue<BasePtr_> q;
+    q.push(impl_.header_.parent_);
+
+    while (!q.empty()) {
+      int level_size = q.size();
+
+      for (int i = 0; i < level_size; ++i) {
+        BasePtr_ node = q.front();
+        q.pop();
+
+        if (node == GetEnd() || !node) continue;
+
+        const Key_& key = GetKey(node);
+        std::string color = (node->color_ == Color_::kRed) ? "R" : "B";
+        std::cout << key << color << " ";
+
+        if (node->left_ && node->left_ != GetEnd()) {
+          q.push(node->left_);
+        }
+        if (node->right_ && node->right_ != GetEnd()) {
+          q.push(node->right_);
+        }
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  }
 };
 
 template<typename Key_,     typename Val_, typename KeyOfValue_,
@@ -249,11 +293,64 @@ RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::GetInsertUniquePos(const key_
   return result;
 }
 
+template<typename Key_, typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+std::pair<typename RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::BasePtr_,
+          typename RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::BasePtr_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::GetInsertHintUniquePos(
+  const_iterator hint, const key_type& k) {
+
+  BasePtr_ x = hint.node_;
+  std::pair<BasePtr_, BasePtr_> result{BasePtr_(), BasePtr_()};
+
+  if (x == GetEnd()) {
+    if (impl_.node_count_ > 0 && key_compare_(GetKey(impl_.header_.right_), k)) {
+      result.second = impl_.header_.right_;
+    } else {
+      result = GetInsertUniquePos(k);
+    }
+  } else if (key_compare_(k, GetKey(x))) {
+    iterator before(x);
+    if (x == impl_.header_.left_) {
+      result.first = impl_.header_.left_;
+      result.second = impl_.header_.left_;
+    } else if (!key_compare_(GetKey((--before).node_), k)) {
+      if (!GetRight(before.node_)) {
+        result.second = before.node_;
+      } else {
+        result.first = x;
+        result.second = x;
+      }
+    } else {
+      result = GetInsertUniquePos(k);
+    }
+  } else if (key_compare_(GetKey(x), k)) {
+    iterator after(x);
+    if (x == impl_.header_.right_) {
+      result.second = impl_.header_.right_;
+    } else if (!key_compare_(k, GetKey((++after).node_))) {
+      if (!GetRight(x)) {
+        result.second = x;
+      } else {
+        result.first = after.node_;
+        result.second = after.node_;
+      }
+    } else {
+      result = GetInsertUniquePos(k);
+    }
+  } else {
+    result.first = x;
+  }
+
+  return result;
+}
+
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
 template<typename Arg_>
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator
-RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::InsertNode(BasePtr_ node, BasePtr_ parent,
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::InsertNode(BasePtr_ node,
+                                                              BasePtr_ parent,
                                                               Arg_&& arg) {
   AllocNode alloc_node(*this);
   BasePtr_ new_base = alloc_node(std::forward<Arg_>(arg))->GetBasePtr();
@@ -291,7 +388,8 @@ RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::InsertNode(BasePtr_ node, Bas
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
 template<typename Arg_>
-std::pair<typename RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator, bool>
+std::pair<typename RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator,
+          bool>
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::InsertUnique(Arg_&& x) {
   using Result_ = std::pair<iterator, bool>;
   std::pair<BasePtr_, BasePtr_> res = GetInsertUniquePos(KeyOfValue_()(x));
@@ -303,6 +401,57 @@ RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::InsertUnique(Arg_&& x) {
 
   return result;
 }
+
+
+template<typename Key_, typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+template<typename Arg_>
+typename RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::InsertHintUnique(iterator hint, Arg_&& arg) {
+  std::pair<BasePtr_, BasePtr_> pos = GetInsertHintUniquePos(hint, arg);
+  iterator result(pos.first);
+  if (pos.second) {
+    result = InsertNode(pos.first,
+                        pos.second,
+                        std::make_pair(std::forward<Arg_>(arg), typename Val_::second_type{}));
+  }
+
+  return result;
+}
+
+/*
+	_Auto_node __z(*this, std::forward<_Args>(__args)...);
+	auto __res = _M_get_insert_hint_unique_pos(__pos, __z._M_key());
+	if (__res.second)
+	  return __z._M_insert(__res);
+	return iterator(__res.first);
+*/
+
+template<typename Key_,     typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::LowerBound(const Key_& key) {
+  return LowerBound(GetBegin(), GetEnd(), key);
+}
+
+template<typename Key_,     typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::LowerBound(BasePtr_ x,
+                                                              BasePtr_ y,
+                                                              const Key_& key) {
+  while (x) {
+    if (!key_compare_(GetKey(x), key)) {
+      y = x;
+      x = GetLeft(x);
+    } else {
+      x = GetRight(x);
+    }
+  }
+
+  return iterator(y);
+}
+
 
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>

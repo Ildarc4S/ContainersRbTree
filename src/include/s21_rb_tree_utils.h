@@ -215,6 +215,12 @@ constexpr Iterator<IsConst_, ValPtr_>::Iterator(BasePtr_ node) noexcept
 : node_(node) {
 }
 
+template<bool IsConst_, typename ValPtr_>
+constexpr Iterator<IsConst_, ValPtr_>::Iterator(const Iterator<false, ValPtr_>& it) requires (IsConst_)
+: node_(it.node_) {
+}
+
+
 template <bool IsConst_, typename ValPtr_>
 [[nodiscard]]
 Iterator<IsConst_, ValPtr_>::reference
