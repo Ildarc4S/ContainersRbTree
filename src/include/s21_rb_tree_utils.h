@@ -193,6 +193,11 @@ Node<ValPtr_>::ValueType_ const* Node<ValPtr_>::GetValPtr() const {
   return std::addressof(storage_.data_);
 }
 
+template <typename ValPtr_>
+Node<ValPtr_>::NodePtr_ Node<ValPtr_>::GetNodePtr() noexcept {
+  return std::pointer_traits<NodePtr_>::pointer_to(*this);
+}
+
 ////////////
 // Header //
 ////////////
