@@ -101,7 +101,7 @@ public:
 
         const Key_& key = GetKey(node);
         std::string color = (node->color_ == Color_::kRed) ? "R" : "B";
-        std::cout << key << color << " ";
+        std::cout << key << color << ":" << (*static_cast<Node_&>(*node).GetValPtr()).second << " ";
 
         if (node->left_ && node->left_ != GetEnd()) {
           q.push(node->left_);
