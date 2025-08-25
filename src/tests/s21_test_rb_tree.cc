@@ -43,6 +43,15 @@ TEST(RBTreeTest, MethodAt) {
   std::cout << "at(): " << it->second << std::endl;
 }
 
-TEST(RBTreeTest, ExampleTest) {
+TEST(RBTreeTest, Erase) {
   s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1;
+
+  tree1.InsertUnique(std::pair<const int, int>(1, 11));
+  tree1.InsertUnique(std::pair<const int, int>(2, 21));
+  tree1.PrintTreeByLevelsSimple();
+
+  tree1.Erase(tree1.begin());
+  tree1.Erase(tree1.begin());
+
+  tree1.PrintTreeByLevelsSimple();
 }
