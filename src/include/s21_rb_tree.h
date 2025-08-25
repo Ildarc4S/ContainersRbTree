@@ -10,11 +10,13 @@ template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_ = std::allocator<Val_> >
 class RbTree {
 private:
+
   using ValAlloc_ = std::allocator_traits<Alloc_>::template rebind_alloc<Val_>;
   using ValPtr_ = std::allocator_traits<ValAlloc_>::pointer;
   using NodeTraits_ = rb_tree::NodeTraits<Val_, ValPtr_>;
 
 public:
+
   using iterator = NodeTraits_::Iterator_;
   using const_iterator = NodeTraits_::ConstIterator_;
   using key_type = Key_;
@@ -22,6 +24,7 @@ public:
 
 private:
   using BasePtr_ = NodeTraits_::BasePtr_;
+  using NodeBase_ = NodeTraits_::NodeBase_;
   using NodePtr_ = NodeTraits_::NodePtr_;
   using Node_    = NodeTraits_::Node_;
   using Header_  = NodeTraits_::Header_;
@@ -36,7 +39,9 @@ private:
 
   Compare_ key_compare_;
   Impl impl_;
+
 private:
+
   BasePtr_ GetBegin() const noexcept;
   BasePtr_ GetEnd() const noexcept;
   BasePtr_ GetLeft(BasePtr_ node) const noexcept;
@@ -48,20 +53,28 @@ private:
 
   template<typename Arg_>
   void ConstructNode(NodePtr_ node, Arg_ arg);
+  void DestroyNode(NodePtr_ node);
 
   template<typename Arg_>
   NodePtr_ CreateNode(Arg_ arg);
+  void DropNode(NodePtr_ node);
 
   template<typename Arg_>
   iterator InsertNode(BasePtr_ node, BasePtr_ parent, Arg_&& arg);
+  void EraseNode(iterator position);
 
   std::pair<BasePtr_, BasePtr_> GetInsertUniquePos(const key_type& k);
   std::pair<BasePtr_, BasePtr_> GetInsertHintUniquePos(const_iterator hint, const key_type& key);
 
   void RotateLeft(BasePtr_ x);
   void RotateRight(BasePtr_ x);
+  void Transplant(BasePtr_ u, BasePtr_ v);
+  void UpdateBoundaryPointers();
   void RebalanceInsert(BasePtr_ x);
-  // void RebalanceErase(BasePtr_ x);
+  void RebalanceErase(BasePtr_ x, BasePtr_ x_parent);
+
+  bool IsBlack(BasePtr_ node);
+  bool IsRed(BasePtr_ node);
 
 public:
 
@@ -72,6 +85,8 @@ public:
 
   template<typename Arg_>
   iterator InsertHintUnique(iterator hint, Arg_&& x);
+
+  iterator Erase(iterator position);
 
   iterator LowerBound(const key_type& key);
   iterator LowerBound(BasePtr_ x, BasePtr_ y, const Key_& key);
@@ -230,7 +245,8 @@ void RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::DeleteNode(NodePtr_ node
   }
 }
 
-template<typename Key_, typename Val_, typename KeyOfValue_, typename Compare_, typename Alloc_>
+template<typename Key_, typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
 template<typename Arg_>
 void RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::ConstructNode(NodePtr_ node, Arg_ arg) {
   try {
@@ -243,6 +259,14 @@ void RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::ConstructNode(NodePtr_ n
   }
 }
 
+template<typename Key_, typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+void
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::DestroyNode(NodePtr_ node) {
+  NodeAllocTraits_::destroy(impl_, node->GetValPtr());
+  node->~Node();
+}
+
 template<typename Key_, typename Val_, typename KeyOfValue_, typename Compare_, typename Alloc_>
 template<typename Arg_>
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::NodePtr_
@@ -250,6 +274,13 @@ RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::CreateNode(Arg_ arg) {
   NodePtr_ ptr = NewNode();
   ConstructNode(ptr, std::forward<Arg_>(arg));
   return ptr;
+}
+
+template<typename Key_, typename Val_, typename KeyOfValue_, typename Compare_, typename Alloc_>
+void
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::DropNode(NodePtr_ node) {
+  DestroyNode(node);
+  DeleteNode(node);
 }
 
 
@@ -407,25 +438,95 @@ template<typename Key_, typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
 template<typename Arg_>
 typename RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator
-RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::InsertHintUnique(iterator hint, Arg_&& arg) {
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+InsertHintUnique(iterator hint, Arg_&& arg) {
   std::pair<BasePtr_, BasePtr_> pos = GetInsertHintUniquePos(hint, arg);
   iterator result(pos.first);
   if (pos.second) {
     result = InsertNode(pos.first,
                         pos.second,
-                        std::make_pair(std::forward<Arg_>(arg), typename Val_::second_type{}));
+                        std::make_pair(std::forward<Arg_>(arg),
+                                       typename Val_::second_type{}));
   }
 
   return result;
 }
 
-/*
-	_Auto_node __z(*this, std::forward<_Args>(__args)...);
-	auto __res = _M_get_insert_hint_unique_pos(__pos, __z._M_key());
-	if (__res.second)
-	  return __z._M_insert(__res);
-	return iterator(__res.first);
-*/
+template<typename Key_, typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+Erase(iterator position) {
+  if (position == end()) {
+    throw std::out_of_range("Iterator cannot be end");
+  }
+  iterator result = position;
+  ++result;
+  EraseNode(position);
+
+  return result;
+}
+
+
+template<typename Key_, typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+void
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+EraseNode(iterator position) {
+  BasePtr_ z = position.node_;
+  BasePtr_ y = z;
+  Color_ y_original_color = y->color_;
+  BasePtr_ x = nullptr;
+  BasePtr_ x_parent = z->parent_;
+
+  if (z->left_ == nullptr) {
+    x = z->right_;
+    Transplant(z, z->right_);
+  } else if (z->right_ == nullptr) {
+    x = z->left_;
+    x_parent = z;
+    Transplant(z, z->left_);
+  } else {
+    y = z->right_;
+    while (y->left_ != nullptr) {
+      y = y->left_;
+    }
+    y_original_color = y->color_;
+    x = y->right_;
+    x_parent = y;
+
+    if (y->parent_ == z) {
+      if (x != nullptr) {
+        x->parent_ = y;
+      }
+    } else {
+      Transplant(y, y->right_);
+      y->right_ = z->right_;
+      if (y->right_ != nullptr) {
+        y->right_->parent_ = y;
+      }
+      x_parent = y->parent_;
+    }
+
+    Transplant(z, y);
+    y->left_ = z->left_;
+    if (y->left_ != nullptr) {
+      y->left_->parent_ = y;
+    }
+    y->color_ = z->color_;
+  }
+
+  UpdateBoundaryPointers();
+  DropNode(static_cast<Node_&>(*z).GetNodePtr());
+
+  --impl_.node_count_;
+
+  if (y_original_color == Color_::kBlack) {
+    RebalanceErase(x, x_parent);
+  }
+}
+
+
 
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
@@ -508,6 +609,36 @@ void RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::RotateRight(BasePtr_ x) 
   x->parent_ = y;
 }
 
+template<typename Key_, typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+void
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::Transplant(BasePtr_ u, BasePtr_ v) {
+  if (u->parent_ == GetEnd()) {
+    impl_.header_.parent_ = v;
+  } else if (u == u->parent_->left_) {
+    u->parent_->left_ = v;
+  } else {
+    u->parent_->right_ = v;
+  }
+
+  if (v != nullptr) {
+    v->parent_ = u->parent_;
+  }
+}
+
+template<typename Key_, typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+void
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::UpdateBoundaryPointers() {
+  if (impl_.header_.parent_ != GetEnd() && impl_.header_.parent_ != nullptr) {
+    impl_.header_.left_ = NodeBase_::Minimum(impl_.header_.parent_);
+    impl_.header_.right_ = NodeBase_::Maximum(impl_.header_.parent_);
+  } else {
+    impl_.header_.parent_ = GetEnd();
+    impl_.header_.left_ = GetEnd();
+    impl_.header_.right_ = GetEnd();
+  }
+}
 
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
@@ -551,6 +682,93 @@ void RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::RebalanceInsert(BasePtr_
   }
 
   impl_.header_.parent_->color_ = Color_::kBlack;
+}
+
+template<typename Key_,     typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+void
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+RebalanceErase(BasePtr_ x, BasePtr_ x_parent) {
+  while (x != impl_.header_.parent_ && IsBlack(x)) {
+    if (x_parent == nullptr) {
+      break;
+    }
+
+    if (x == x_parent->left_) {
+      BasePtr_ w = x_parent->right_;
+
+      if (IsRed(w)) {
+        w->color_ = Color_::kBlack;
+        x_parent->color_ = Color_::kRed;
+        RotateLeft(x_parent);
+        w = x_parent->right_;
+      }
+      if (IsBlack(w->left_) && IsBlack(w->right_)) {
+        w->color_ = Color_::kRed;
+        x = x_parent;
+        x_parent = x->parent_;
+      } else {
+        if (IsBlack(w->right_)) {
+          w->left_->color_ = Color_::kBlack;
+          w->color_ = Color_::kRed;
+          RotateRight(w);
+          w = x_parent->right_;
+        }
+
+        w->color_ = x_parent->color_;
+        x_parent->color_ = Color_::kBlack;
+        w->right_->color_ = Color_::kBlack;
+        RotateLeft(x_parent);
+        x = impl_.header_.parent_;
+        x_parent = nullptr;
+      }
+    } else {
+      BasePtr_ w = x_parent->left_;
+
+      if (IsRed(w)) {
+        w->color_ = Color_::kBlack;
+        x_parent->color_ = Color_::kRed;
+        RotateRight(x_parent);
+        w = x_parent->left_;
+      }
+      if (IsBlack(w->right_) && IsBlack(w->left_)) {
+        w->color_ = Color_::kRed;
+        x = x_parent;
+        x_parent = x->parent_;
+      } else {
+        if (IsBlack(w->left_)) {
+          w->right_->color_ = Color_::kBlack;
+          w->color_ = Color_::kRed;
+          RotateLeft(w);
+          w = x_parent->left_;
+        }
+
+        w->color_ = x_parent->color_;
+        x_parent->color_ = Color_::kBlack;
+        w->left_->color_ = Color_::kBlack;
+        RotateRight(x_parent);
+        x = impl_.header_.parent_;
+        x_parent = nullptr;
+      }
+    }
+  }
+
+  if (x) {
+    x->color_ = Color_::kBlack;
+  }
+
+}
+
+template<typename Key_,     typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+bool RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::IsBlack(BasePtr_ node) {
+  return node == nullptr || node->color_ == Color_::kBlack;
+}
+
+template<typename Key_,     typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+bool RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::IsRed(BasePtr_ node) {
+  return node != nullptr && node->color_ == Color_::kRed;
 }
 
 } //  s21
