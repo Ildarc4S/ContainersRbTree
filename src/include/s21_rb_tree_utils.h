@@ -134,12 +134,6 @@ struct NodeTraits {
   using Header_ = Header<NodeBase_>;
   using Iterator_ = Iterator<false, ValPtr_>;
   using ConstIterator_ = Iterator<true, ValPtr_>;
-
-  static void RotateLeft(BasePtr_ node);
-  static void RotateRight(BasePtr_ node);
-
-  static void InsertRebalance(BasePtr_ node);
-  static BasePtr_ EraseRebalance(BasePtr_ node);
 };
 
 //////////////
