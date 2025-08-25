@@ -10,10 +10,23 @@ struct SelectFirst {
   }
 };
 
-TEST(RBTreeTest, ExampleTest) {
+TEST(RBTreeTest, OperatorBracket) {
   s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1;
 
-  tree1.InsertUnique(std::pair<const int, int>(2, 2));
   tree1.InsertUnique(std::pair<const int, int>(1, 2));
-  tree1.InsertUnique(std::pair<const int, int>(3, 2));
+  tree1.InsertUnique(std::pair<const int, int>(2, 2));
+  tree1.PrintTreeByLevelsSimple();
+
+  int key = 3;
+  auto it = tree1.LowerBound(key);
+  if (it == tree1.end() || std::less<int>()(key, (*it).first)) {
+    it = tree1.InsertHintUnique(it, key);
+  }
+  (*it).second = 3;
+
+  tree1.PrintTreeByLevelsSimple();
+}
+
+TEST(RBTreeTest, ExampleTest) {
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1;
 }
