@@ -27,6 +27,22 @@ TEST(RBTreeTest, OperatorBracket) {
   tree1.PrintTreeByLevelsSimple();
 }
 
+
+TEST(RBTreeTest, MethodAt) {
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1;
+
+  tree1.InsertUnique(std::pair<const int, int>(1, 11));
+  tree1.InsertUnique(std::pair<const int, int>(2, 21));
+  tree1.PrintTreeByLevelsSimple();
+
+  auto key = 1;
+  auto it = tree1.LowerBound(key);
+  if (it == tree1.end() || std::less<int>()(key, it->first)) {
+      throw std::out_of_range("map::at: key not found");
+  }
+  std::cout << "at(): " << it->second << std::endl;
+}
+
 TEST(RBTreeTest, ExampleTest) {
   s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1;
 }
