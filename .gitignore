@@ -8,3 +8,7 @@ coverage
 *.out
 *.log
 *.gch
+a.txt
+
+map_test
+s21_test_rb_tree
