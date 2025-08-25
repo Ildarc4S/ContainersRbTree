@@ -689,11 +689,7 @@ template<typename Key_,     typename Val_, typename KeyOfValue_,
 void
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
 RebalanceErase(BasePtr_ x, BasePtr_ x_parent) {
-  while (x != impl_.header_.parent_ && IsBlack(x)) {
-    if (x_parent == nullptr) {
-      break;
-    }
-
+  while (x != impl_.header_.parent_ && IsBlack(x) && x_parent != nullptr) {
     if (x == x_parent->left_) {
       BasePtr_ w = x_parent->right_;
 
