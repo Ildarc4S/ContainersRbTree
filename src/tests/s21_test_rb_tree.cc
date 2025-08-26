@@ -104,3 +104,14 @@ TEST(RBTreeTest, SwapTree) {
   tree1.PrintTreeByLevelsSimple();
   tree2.PrintTreeByLevelsSimple();
 }
+
+TEST(RBTreeTest, InitializerList) {
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1 = {
+    {1, 11},
+    {2, 12},
+    {3, 13},
+    {4, 14}
+  };
+
+  tree1.PrintTreeByLevelsSimple();
+}
