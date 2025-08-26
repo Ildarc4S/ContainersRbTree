@@ -92,6 +92,10 @@ public:
 
   RbTree() = default;
 
+  RbTree(std::initializer_list<Val_> init,
+        const Compare_& compare = Compare_(),
+        const Alloc_& alloc = Alloc_());
+
   template<typename Arg_>
   std::pair<iterator, bool> InsertUnique(Arg_&& x);
 
@@ -171,6 +175,10 @@ struct RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::Impl
     noexcept(std::is_nothrow_default_constructible_v<NodeAlloc_>)
   : NodeAlloc_() {
   }
+
+  Impl(NodeAlloc_&& node_alloc)
+  : NodeAlloc_(std::move(node_alloc)){
+  }
 };
 
 template<typename Key_, typename Val_, typename KeyOfValue_, typename Compare_,
@@ -187,7 +195,6 @@ private:
   }
 };
 
-
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::AllocNode::AllocNode(RbTree& rb_tree)
@@ -201,6 +208,20 @@ RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::NodePtr_
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::AllocNode::operator()(Arg_&& arg) const {
   return rb_tree_.CreateNode(std::forward<Arg_>(arg));
 }
+
+template<typename Key_,     typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+RbTree(std::initializer_list<Val_> init,
+      const Compare_& compare,
+      const Alloc_& alloc)
+  : key_compare_(compare)
+  , impl_(NodeAlloc_(alloc)) {
+  for (const auto& item : init) {
+    InsertUnique(item);
+  }
+}
+
 
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
