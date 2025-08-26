@@ -42,7 +42,7 @@ struct Header {
   Header(Header&& other) noexcept;
 
   void SwapData(Header& other) noexcept;
-  void Reset();
+  void Reset() noexcept;
 
   NodeBase_ header_;
   std::size_t node_count_;
@@ -199,9 +199,7 @@ Node<ValPtr_>::NodePtr_ Node<ValPtr_>::GetNodePtr() noexcept {
 template<typename NodeBase_>
 Header<NodeBase_>::Header() noexcept {
   header_.color_ = NodeColor::kRed;
-  header_.parent_ = nullptr;
-	header_.left_ = header_.right_ = header_.GetBasePtr();
-	node_count_ = 0;
+  Reset();
 }
 
 template<typename NodeBase_>
@@ -218,6 +216,13 @@ void Header<NodeBase_>::SwapData(Header& other) noexcept {
   if (other.header_.parent_ != nullptr) {
     other.header_.parent_->parent_ = other.header_.GetBasePtr();
   }
+}
+
+template<typename NodeBase_>
+void Header<NodeBase_>::Reset() noexcept {
+  header_.parent_ = nullptr;
+	header_.left_ = header_.right_ = header_.GetBasePtr();
+	node_count_ = 0;
 }
 
 //////////////
@@ -265,7 +270,7 @@ template <bool IsConst_, typename ValPtr_>
 constexpr Iterator<IsConst_, ValPtr_>&
 Iterator<IsConst_, ValPtr_>::operator++() noexcept {
   if (node_->right_) {
-    node_ = NodeBase_::Maximum(node_->right_);
+    node_ = NodeBase_::Minimum(node_->right_);
   } else {
     BasePtr_ parent = node_->parent_;
     BasePtr_ current = node_;
@@ -321,11 +326,7 @@ Iterator<IsConst_, ValPtr_>::operator--(int) noexcept {
   return it;
 }
 
-struct MergeHelper {
-};
-
 } //  rb_tree
 } //  s21
 
 #endif //  _S21_RB_TREE_UTILS_
-
