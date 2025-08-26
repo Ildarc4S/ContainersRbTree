@@ -6,6 +6,10 @@
 
 namespace s21 {
 
+template<typename Tree, typename OtherCompare_>
+struct RbTreeMergeHelper {
+};
+
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_ = std::allocator<Val_> >
 class RbTree {
@@ -36,6 +40,12 @@ private:
 
   struct AllocNode;
   struct Impl;
+
+  template<typename OtherCompare_>
+	using OtherTree_ = RbTree<Key_, Val_, KeyOfValue_, OtherCompare_, Alloc_>;
+
+  template<typename, typename>
+  friend struct RbTreeMergeHelper;
 
   Compare_ key_compare_;
   Impl impl_;
@@ -75,7 +85,6 @@ private:
   static void RebalanceInsert(BasePtr_ x, BasePtr_& root);
   static void RebalanceErase(BasePtr_ x, BasePtr_ x_parent, BasePtr_& root);
 
-
   static bool IsBlack(BasePtr_ node);
   static bool IsRed(BasePtr_ node);
 
@@ -90,9 +99,13 @@ public:
   iterator InsertHintUnique(iterator hint, Arg_&& x);
 
   iterator Erase(iterator position);
-  void MergeUnique() noexcept;
   iterator LowerBound(const key_type& key);
   iterator Find(const key_type& key);
+
+  template<typename OtherCompare_>
+  void MergeUnique(OtherTree_<OtherCompare_>& other_tree) noexcept;
+
+  void Swap(RbTree& other_tree);
 
   iterator begin() noexcept;
   iterator end() noexcept;
@@ -159,6 +172,21 @@ struct RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::Impl
   : NodeAlloc_() {
   }
 };
+
+template<typename Key_, typename Val_, typename KeyOfValue_, typename Compare_,
+	       typename Alloc_, typename OtherCompare_>
+struct RbTreeMergeHelper<
+         RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>,
+         OtherCompare_> {
+private:
+  friend class RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>;
+
+  static auto&
+  GetImpl(RbTree<Key_, Val_, KeyOfValue_, OtherCompare_, Alloc_>& rb_tree) {
+    return rb_tree.impl_;
+  }
+};
+
 
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
@@ -453,17 +481,44 @@ Erase(iterator position) {
   return result;
 }
 
-// template<typename Key_, typename Val_, typename KeyOfValue_,
-//          typename Compare_, typename Alloc_>
-// template <typename OtherCompare_>
-// void
-// RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
-// MergeUnique(RbTree<Key_, Val_, KeyOfValue_, OtherCompare_, Alloc_>& tree) noexcept {
-//   auto it = src.begin();
-//   while (it != src.end()) {
+template<typename Key_, typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+template <typename OtherCompare_>
+void
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+MergeUnique(OtherTree_<OtherCompare_>& other_tree) noexcept {
+  auto it = other_tree.begin();
+  while (it != other_tree.end()) {
+    auto current = it++;
+    auto pos = GetInsertUniquePos(KeyOfValue_()(*current));
 
-//   }
-// }
+    if (pos.second) {
+      auto& other_impl = RbTreeMergeHelper<RbTree, OtherCompare_>::GetImpl(other_tree);
+
+      BasePtr_ node_ptr = ExtractNode(current.node_, other_impl.header_);
+      --other_impl.node_count_;
+
+      bool insert_left = (pos.first != nullptr || pos.second == GetEnd() ||
+                          key_compare_(GetKey(node_ptr), GetKey(pos.second)));
+
+      PushNode(pos.second, node_ptr, impl_.header_, insert_left);
+      ++impl_.node_count_;
+    }
+  }
+}
+
+template<typename Key_, typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+void
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+Swap(RbTree& other_tree) {
+  impl_.SwapData(other_tree.impl_);
+  std::swap(key_compare_, other_tree.key_compare_);
+
+  if constexpr (NodeAllocTraits_::propagate_on_container_swap::value) {
+    std::swap(impl_, other_tree.impl_);
+  }
+}
 
 template<typename Key_, typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
@@ -491,6 +546,7 @@ PushNode(BasePtr_ parent, BasePtr_ new_node, NodeBase_& header, bool insert_left
     }
   }
   RebalanceInsert(new_node, header.parent_);
+  UpdateBoundaryPointers(header);
 }
 
 template<typename Key_, typename Val_, typename KeyOfValue_,
