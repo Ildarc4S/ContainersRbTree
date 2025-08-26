@@ -105,24 +105,22 @@ TEST(RBTreeTest, SwapTree) {
   tree2.PrintTreeByLevelsSimple();
 }
 
-TEST(RBTreeTest, InitializerList) {
-  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1 = {
+TEST(RBTreeTest, InsertRangeUnique) {
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1;
+  std::initializer_list<std::pair<const int, int>> list = {
     {1, 11},
     {2, 12},
     {3, 13},
     {4, 14}
   };
+
+  tree1.InsertRangeUnique(list.begin(), list.end());
 
   tree1.PrintTreeByLevelsSimple();
 }
 
 TEST(RBTreeTest, InsertOrAsign) {
-  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1 = {
-    {1, 11},
-    {2, 12},
-    {3, 13},
-    {4, 14}
-  };
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1;
 
   auto key = 5;
   auto value = 15;
@@ -138,19 +136,26 @@ TEST(RBTreeTest, InsertOrAsign) {
 }
 
 TEST(RBTreeTest, OperatorEqual) {
-  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1 = {
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1;
+  std::initializer_list<std::pair<const int, int>> list = {
     {1, 11},
     {2, 12},
     {3, 13},
     {4, 14}
   };
+  tree1.InsertRangeUnique(list.begin(), list.end());
 
-  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree2 = {
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree2;
+  std::initializer_list<std::pair<const int, int>> list2 = {
     {1, 21},
     {2, 22},
     {3, 23},
-    {4, 24}
+    {3, 23},
+    {3, 23},
+    {4, 24},
+    {5, 25}
   };
+  tree2.InsertRangeEqual(list2.begin(), list2.end());
 
   tree1.PrintTreeByLevelsSimple();
   tree2.PrintTreeByLevelsSimple();
@@ -162,19 +167,24 @@ TEST(RBTreeTest, OperatorEqual) {
 }
 
 TEST(RBTreeTest, OperatorMoveEqual) {
-  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1 = {
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1;
+  std::initializer_list<std::pair<const int, int>> list = {
     {1, 11},
     {2, 12},
     {3, 13},
     {4, 14}
   };
+  tree1.InsertRangeUnique(list.begin(), list.end());
 
-  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree2 = {
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree2;
+  std::initializer_list<std::pair<const int, int>> list2 = {
     {1, 21},
     {2, 22},
     {3, 23},
-    {4, 24}
+    {4, 24},
+    {5, 25}
   };
+  tree2.InsertRangeUnique(list2.begin(), list2.end());
 
   tree1.PrintTreeByLevelsSimple();
   tree2.PrintTreeByLevelsSimple();
@@ -186,12 +196,15 @@ TEST(RBTreeTest, OperatorMoveEqual) {
 }
 
 TEST(RBTreeTest, Iterator) {
-  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1 = {
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1;
+  std::initializer_list<std::pair<const int, int>> list = {
     {1, 11},
     {2, 12},
     {3, 13},
     {4, 14}
   };
+  tree1.InsertRangeUnique(list.begin(), list.end());
+
 
   for (auto& a : tree1) {
     std::cout << "{" << a.first << " " << a.second << "}" << std::endl;
