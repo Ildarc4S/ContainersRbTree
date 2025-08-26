@@ -41,7 +41,7 @@ struct Header {
   Header() noexcept;
   Header(Header&& other) noexcept;
 
-  void MoveData(Header&& other) noexcept;
+  void SwapData(Header& other) noexcept;
   void Reset();
 
   NodeBase_ header_;
@@ -204,6 +204,21 @@ Header<NodeBase_>::Header() noexcept {
 	node_count_ = 0;
 }
 
+template<typename NodeBase_>
+void Header<NodeBase_>::SwapData(Header& other) noexcept {
+  std::swap(header_.parent_, other.header_.parent_);
+  std::swap(header_.left_, other.header_.left_);
+  std::swap(header_.right_, other.header_.right_);
+  std::swap(header_.color_, other.header_.color_);
+  std::swap(node_count_, other.node_count_);
+
+  if (header_.parent_ != nullptr) {
+    header_.parent_->parent_ = header_.GetBasePtr();
+  }
+  if (other.header_.parent_ != nullptr) {
+    other.header_.parent_->parent_ = other.header_.GetBasePtr();
+  }
+}
 
 //////////////
 // Iterator //
@@ -250,21 +265,17 @@ template <bool IsConst_, typename ValPtr_>
 constexpr Iterator<IsConst_, ValPtr_>&
 Iterator<IsConst_, ValPtr_>::operator++() noexcept {
   if (node_->right_) {
-    node_ = node_->right_;
-
-    while (node_->left_) {
-      node_ = node_->left_;
-    }
+    node_ = NodeBase_::Maximum(node_->right_);
   } else {
     BasePtr_ parent = node_->parent_;
     BasePtr_ current = node_;
 
-    while (parent && current == parent->left_) {
+    while (parent && current == parent->right_) {
       current = parent;
       parent = parent->parent_;
     }
 
-    if (current->left_ != parent) {
+    if (current->right_ != parent) {
       node_ = parent;
     }
   }
@@ -290,6 +301,7 @@ Iterator<IsConst_, ValPtr_>::operator--() noexcept {
       node_ = parent;
     }
   }
+
   return *this;
 }
 
@@ -308,6 +320,9 @@ Iterator<IsConst_, ValPtr_>::operator--(int) noexcept {
   --*this;
   return it;
 }
+
+struct MergeHelper {
+};
 
 } //  rb_tree
 } //  s21
