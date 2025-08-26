@@ -24,7 +24,7 @@ public:
   using iterator = NodeTraits_::Iterator_;
   using const_iterator = NodeTraits_::ConstIterator_;
   using key_type = Key_;
-  // using size_type = ;
+  using size_type = size_t;
 
 private:
   using BasePtr_ = NodeTraits_::BasePtr_;
@@ -72,6 +72,7 @@ private:
   template<typename Arg_>
   iterator InsertNode(BasePtr_ node, BasePtr_ parent, Arg_&& arg);
   void EraseNode(iterator position);
+  void EraseSubtree(BasePtr_ node);
 
   std::pair<BasePtr_, BasePtr_> GetInsertUniquePos(const key_type& k);
   std::pair<BasePtr_, BasePtr_> GetInsertHintUniquePos(const_iterator hint, const key_type& key);
@@ -96,6 +97,12 @@ public:
         const Compare_& compare = Compare_(),
         const Alloc_& alloc = Alloc_());
 
+  ~RbTree();
+
+  RbTree& operator=(const RbTree& other_tree);
+  RbTree& operator=(RbTree&& other_tree);
+
+
   template<typename Arg_>
   std::pair<iterator, bool> InsertUnique(Arg_&& x);
 
@@ -111,8 +118,15 @@ public:
 
   void Swap(RbTree& other_tree);
 
+  bool Empty() const noexcept;
+  size_type Size() const noexcept;
+  size_type MaxSize() const noexcept;
+  void Clear() noexcept;
+
   iterator begin() noexcept;
   iterator end() noexcept;
+  const_iterator begin() const noexcept;
+  const_iterator end() const noexcept;
 
   static void PushNode(BasePtr_ parent, BasePtr_ new_node, NodeBase_& header, bool is_left);
   static BasePtr_ ExtractNode(BasePtr_ z, NodeBase_& header);
@@ -222,6 +236,43 @@ RbTree(std::initializer_list<Val_> init,
   }
 }
 
+template<typename Key_,     typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+~RbTree() {
+  EraseSubtree(GetBegin());
+}
+
+template<typename Key_,     typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>&
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+operator=(const RbTree& other_tree) {
+  if (this != std::addressof(other_tree)) {
+    if constexpr (NodeAllocTraits_::propagate_on_container_copy_assignment::value) {
+      impl_ = other_tree.impl_;
+    }
+    key_compare_ = other_tree.key_compare_;
+    Clear();
+
+    for (const auto& val : other_tree) {
+      InsertUnique(val);
+    }
+  }
+  return *this;
+}
+
+template<typename Key_,     typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>&
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+operator=(RbTree&& other_tree) {
+  if (this != std::addressof(other_tree)) {
+    Clear();
+    Swap(other_tree);
+  }
+  return *this;
+}
 
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
@@ -274,6 +325,20 @@ template<typename Key_,     typename Val_, typename KeyOfValue_,
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::end() noexcept {
   return iterator(GetEnd());
+}
+
+template<typename Key_,     typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::const_iterator
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::begin() const noexcept {
+  return const_iterator(impl_.header_.left_);
+}
+
+template<typename Key_,     typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::const_iterator
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::end() const noexcept {
+  return const_iterator(GetEnd());
 }
 
 template<typename Key_,     typename Val_, typename KeyOfValue_,
@@ -337,7 +402,6 @@ RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::DropNode(NodePtr_ node) {
   DestroyNode(node);
   DeleteNode(node);
 }
-
 
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
@@ -468,7 +532,6 @@ RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::InsertUnique(Arg_&& x) {
   return result;
 }
 
-
 template<typename Key_, typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
 template<typename Arg_>
@@ -539,6 +602,39 @@ Swap(RbTree& other_tree) {
   if constexpr (NodeAllocTraits_::propagate_on_container_swap::value) {
     std::swap(impl_, other_tree.impl_);
   }
+}
+
+template<typename Key_, typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+bool
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+Empty() const noexcept {
+  return impl_.node_count_ == 0;
+}
+
+template<typename Key_, typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::size_type
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+Size() const noexcept {
+  return impl_.node_count_;
+}
+
+template<typename Key_, typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::size_type
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+MaxSize() const noexcept {
+  return NodeAllocTraits_::max_size(impl_);
+}
+
+template<typename Key_, typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+void
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+Clear() noexcept {
+  EraseSubtree(GetBegin());
+  impl_.Reset();
 }
 
 template<typename Key_, typename Val_, typename KeyOfValue_,
@@ -637,7 +733,18 @@ EraseNode(iterator position) {
   --impl_.node_count_;
 }
 
-
+template<typename Key_, typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+void
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+EraseSubtree(BasePtr_ node) {
+  while (node && node != GetEnd()) {
+    EraseSubtree(node->right_);
+    BasePtr_ left = node->left_;
+    DropNode(static_cast<Node_&>(*node).GetNodePtr());
+    node = left;
+  }
+}
 
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
