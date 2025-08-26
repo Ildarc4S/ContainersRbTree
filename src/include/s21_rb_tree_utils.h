@@ -12,6 +12,9 @@ using PtrTraitsRebind_ = std::pointer_traits<Ptr_>::template rebind<T_>;
 template <typename Ptr_>
 using PtrTraitsElemType_ = std::pointer_traits<Ptr_>::element_type;
 
+template<typename ValueType, typename Iter_>
+concept SameValueType = std::same_as<ValueType,
+  typename std::iterator_traits<Iter_>::value_type>;
 
 enum class NodeColor : std::uint8_t {
   kBlack,
