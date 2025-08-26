@@ -115,3 +115,85 @@ TEST(RBTreeTest, InitializerList) {
 
   tree1.PrintTreeByLevelsSimple();
 }
+
+TEST(RBTreeTest, InsertOrAsign) {
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1 = {
+    {1, 11},
+    {2, 12},
+    {3, 13},
+    {4, 14}
+  };
+
+  auto key = 5;
+  auto value = 15;
+  auto it = tree1.LowerBound(key);
+
+  if (it == tree1.end() || std::less<int>()(key, (*it).first)) {
+    auto result = tree1.InsertUnique(std::make_pair(key, std::forward<decltype(value)>(value)));
+  } else {
+    (*it).second = std::forward<decltype(value)>(value);
+  }
+
+  tree1.PrintTreeByLevelsSimple();
+}
+
+TEST(RBTreeTest, OperatorEqual) {
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1 = {
+    {1, 11},
+    {2, 12},
+    {3, 13},
+    {4, 14}
+  };
+
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree2 = {
+    {1, 21},
+    {2, 22},
+    {3, 23},
+    {4, 24}
+  };
+
+  tree1.PrintTreeByLevelsSimple();
+  tree2.PrintTreeByLevelsSimple();
+
+  tree1 = tree2;
+
+  tree1.PrintTreeByLevelsSimple();
+  tree2.PrintTreeByLevelsSimple();
+}
+
+TEST(RBTreeTest, OperatorMoveEqual) {
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1 = {
+    {1, 11},
+    {2, 12},
+    {3, 13},
+    {4, 14}
+  };
+
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree2 = {
+    {1, 21},
+    {2, 22},
+    {3, 23},
+    {4, 24}
+  };
+
+  tree1.PrintTreeByLevelsSimple();
+  tree2.PrintTreeByLevelsSimple();
+
+  tree1 = std::move(tree2);
+
+  tree1.PrintTreeByLevelsSimple();
+  tree2.PrintTreeByLevelsSimple();
+}
+
+TEST(RBTreeTest, Iterator) {
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1 = {
+    {1, 11},
+    {2, 12},
+    {3, 13},
+    {4, 14}
+  };
+
+  for (auto& a : tree1) {
+    std::cout << "{" << a.first << " " << a.second << "}" << std::endl;
+  }
+}
