@@ -43,6 +43,17 @@ TEST(RBTreeTest, MethodAt) {
   std::cout << "at(): " << it->second << std::endl;
 }
 
+TEST(RBTreeTest, Contains) {
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1;
+
+  tree1.InsertUnique(std::pair<const int, int>(1, 11));
+
+  auto key = 1;
+  std::cout << (tree1.Find(key) != tree1.end()
+                ? "Exists"
+                : "Not Exists") << std::endl;
+}
+
 TEST(RBTreeTest, Erase) {
   s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1;
 
@@ -54,4 +65,42 @@ TEST(RBTreeTest, Erase) {
   tree1.Erase(tree1.begin());
 
   tree1.PrintTreeByLevelsSimple();
+}
+
+
+TEST(RBTreeTest, MergeTree) {
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1;
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree2;
+
+  tree1.InsertUnique(std::pair<const int, int>(1, 11));
+  tree1.InsertUnique(std::pair<const int, int>(2, 21));
+  tree1.PrintTreeByLevelsSimple();
+
+  tree2.InsertUnique(std::pair<const int, int>(1, 11));
+  tree2.InsertUnique(std::pair<const int, int>(2, 21));
+  tree2.InsertUnique(std::pair<const int, int>(3, 21));
+  tree2.PrintTreeByLevelsSimple();
+
+  tree1.MergeUnique(tree2);
+
+  tree1.PrintTreeByLevelsSimple();
+}
+
+TEST(RBTreeTest, SwapTree) {
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree1;
+  s21::RbTree<int, std::pair<const int, int>, SelectFirst, std::less<int>> tree2;
+
+  tree1.InsertUnique(std::pair<const int, int>(1, 11));
+  tree1.InsertUnique(std::pair<const int, int>(2, 21));
+  tree1.PrintTreeByLevelsSimple();
+
+  tree2.InsertUnique(std::pair<const int, int>(1, 11));
+  tree2.InsertUnique(std::pair<const int, int>(2, 21));
+  tree2.InsertUnique(std::pair<const int, int>(3, 21));
+  tree2.PrintTreeByLevelsSimple();
+
+  tree1.Swap(tree2);
+
+  tree1.PrintTreeByLevelsSimple();
+  tree2.PrintTreeByLevelsSimple();
 }
