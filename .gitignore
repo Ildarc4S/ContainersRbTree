@@ -11,4 +11,6 @@ coverage
 a.txt
 
 map_test
+set_test
+multiset_test
 s21_test_rb_tree
