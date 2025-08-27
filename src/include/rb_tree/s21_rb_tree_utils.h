@@ -16,6 +16,44 @@ template<typename ValueType, typename Iter_>
 concept SameValueType = std::same_as<ValueType,
   typename std::iterator_traits<Iter_>::value_type>;
 
+template<typename Pair_>
+struct SelectFirst {
+  using pair_first = Pair_::first_type;
+  pair_first& operator()(Pair_& pair) const noexcept;
+  const pair_first& operator()(const Pair_& pair) const noexcept;
+};
+
+template<typename Pair_>
+SelectFirst<Pair_>::pair_first&
+SelectFirst<Pair_>::operator()(Pair_& pair) const noexcept {
+  return pair.first;
+}
+
+template<typename Pair_>
+const SelectFirst<Pair_>::pair_first&
+SelectFirst<Pair_>::operator()(const Pair_& pair) const noexcept {
+  return pair.first;
+}
+
+template<typename T_>
+struct Identity {
+  using type = T_;
+  type& operator()(type& value) const noexcept;
+  const type& operator()(const type& value) const noexcept;
+};
+
+template<typename T_>
+Identity<T_>::type&
+Identity<T_>::operator()(type& value) const noexcept {
+  return value;
+}
+
+template<typename T_>
+const Identity<T_>::type&
+Identity<T_>::operator()(const type& value) const noexcept {
+  return value;
+}
+
 enum class NodeColor : std::uint8_t {
   kBlack,
   kRed
@@ -206,6 +244,16 @@ Header<NodeBase_>::Header() noexcept {
 }
 
 template<typename NodeBase_>
+Header<NodeBase_>::Header(Header&& other) noexcept {
+  header_.color_ = NodeColor::kRed;
+  Reset();
+
+  if (other.header_.parent_ != nullptr) {
+    SwapData(other);
+  }
+}
+
+template<typename NodeBase_>
 void Header<NodeBase_>::SwapData(Header& other) noexcept {
   std::swap(header_.parent_, other.header_.parent_);
   std::swap(header_.left_, other.header_.left_);
@@ -276,14 +324,12 @@ Iterator<IsConst_, ValPtr_>::operator++() noexcept {
     node_ = NodeBase_::Minimum(node_->right_);
   } else {
     BasePtr_ parent = node_->parent_;
-    BasePtr_ current = node_;
-
-    while (parent && current == parent->right_) {
-      current = parent;
+    while (parent && node_ == parent->right_) {
+      node_ = parent;
       parent = parent->parent_;
     }
 
-    if (current->right_ != parent) {
+    if (node_->right_ != parent) {
       node_ = parent;
     }
   }
@@ -298,14 +344,12 @@ Iterator<IsConst_, ValPtr_>::operator--() noexcept {
     node_ = NodeBase_::Maximum(node_->left_);
   } else {
     BasePtr_ parent = node_->parent_;
-    BasePtr_ current = node_;
-
-    while (parent && current == parent->left_) {
-      current = parent;
+    while (parent && node_ == parent->left_) {
+      node_ = parent;
       parent = parent->parent_;
     }
 
-    if (current->left_ != parent) {
+    if (node_->left_ != parent) {
       node_ = parent;
     }
   }
