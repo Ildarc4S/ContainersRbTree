@@ -151,20 +151,20 @@ Map<Key_, T_, Compare_, Alloc_>::End() const noexcept {
 template <typename Key_, typename T_, typename Compare_, typename Alloc_>
 bool
 Map<Key_, T_, Compare_, Alloc_>::Empty() const noexcept {
-  rb_tree_.Empty();
+  return rb_tree_.Empty();
 }
 
 template <typename Key_, typename T_, typename Compare_, typename Alloc_>
 Map<Key_, T_, Compare_, Alloc_>::size_type
 Map<Key_, T_, Compare_, Alloc_>::Size() const noexcept {
-  rb_tree_.Size();
+  return rb_tree_.Size();
 }
 
 
 template <typename Key_, typename T_, typename Compare_, typename Alloc_>
 Map<Key_, T_, Compare_, Alloc_>::size_type
 Map<Key_, T_, Compare_, Alloc_>::MaxSize() const noexcept {
-  rb_tree_.MaxSize();
+  return rb_tree_.MaxSize();
 }
 
 template <typename Key_, typename T_, typename Compare_, typename Alloc_>
