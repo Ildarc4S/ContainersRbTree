@@ -96,7 +96,9 @@ private:
 public:
 
   RbTree() = default;
+  RbTree(RbTree&&) = default;
 
+  RbTree(const RbTree& other);
   RbTree(const Compare_& compare, const Alloc_& alloc);
 
   ~RbTree();
@@ -206,8 +208,15 @@ struct RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::Impl
   : NodeAlloc_() {
   }
 
+  Impl(const Impl& other)
+    : NodeAlloc_(NodeAllocTraits_::select_on_container_copy_construction(other))
+    , Header_() {
+  }
+
+  Impl(Impl&&) = default;
+
   Impl(NodeAlloc_&& node_alloc)
-  : NodeAlloc_(std::move(node_alloc)){
+  : NodeAlloc_(std::move(node_alloc)) {
   }
 };
 
@@ -238,6 +247,21 @@ RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::NodePtr_
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::AllocNode::operator()(Arg_&& arg) const {
   return rb_tree_.CreateNode(std::forward<Arg_>(arg));
 }
+
+template<typename Key_,     typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+RbTree(const RbTree& other)
+  : key_compare_(other.key_compare_)
+  , impl_(other.impl_) {
+  if (other.impl_.header_.parent_ != nullptr) {
+    AllocNode alloc_node(*this);
+    impl_.header_.parent_ = CopyTree(other.GetBegin(), GetEnd(), alloc_node);
+    UpdateBoundaryPointers(impl_.header_);
+    impl_.node_count_ = other.impl_.node_count_;
+  }
+}
+
 
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
@@ -626,7 +650,8 @@ void
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
 MergeUnique(OtherTree_<OtherCompare_>& other_tree) noexcept {
   auto it = other_tree.begin();
-  while (it != other_tree.end()) {
+  auto end = other_tree.end();
+  while (it != end) {
     auto current = it++;
     auto pos = GetInsertUniquePos(KeyOfValue_()(*current));
 
@@ -767,11 +792,11 @@ ExtractNode(BasePtr_ z, NodeBase_& header) {
     y->color_ = z->color_;
   }
 
-  UpdateBoundaryPointers(header);
-
   if (y_original_color == Color_::kBlack) {
     RebalanceErase(x, x_parent, header.parent_);
   }
+
+  UpdateBoundaryPointers(header);
 
   return z;
 }
