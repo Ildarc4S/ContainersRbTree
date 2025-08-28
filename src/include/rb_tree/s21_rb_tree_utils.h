@@ -373,6 +373,17 @@ Iterator<IsConst_, ValPtr_>::operator--(int) noexcept {
   return it;
 }
 
+template <typename Iter_>
+std::iterator_traits<Iter_>::difference_type
+distance(Iter_ first, Iter_ last) {
+  typename std::iterator_traits<Iter_>::difference_type count = 0;
+  while (first != last) {
+    ++count;
+    ++first;
+  }
+  return count;
+}
+
 } //  rb_tree
 } //  s21
 
