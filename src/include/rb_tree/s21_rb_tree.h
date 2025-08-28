@@ -450,39 +450,33 @@ RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::DropNode(NodePtr_ node) {
 
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
-std::pair<typename RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::BasePtr_,
-          typename RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::BasePtr_>
-RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::GetInsertUniquePos(const key_type& k) {
-
+std::pair<
+  typename RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::BasePtr_,
+  typename RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::BasePtr_
+>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+GetInsertUniquePos(const key_type& k) {
+  std::pair<BasePtr_, BasePtr_> result;
   BasePtr_ node = GetBegin();
   BasePtr_ parent = GetEnd();
-  bool is_compare = true;
+  bool found_duplicate = false;
 
-  while(node) {
+  while (node && !found_duplicate) {
     parent = node;
-    is_compare = key_compare_(k, GetKey(node));
-    if (is_compare) {
+
+    if (key_compare_(k, GetKey(node))) {
       node = GetLeft(node);
-    } else {
+    } else if (key_compare_(GetKey(node), k)) {
       node = GetRight(node);
+    } else {
+      found_duplicate = true;
     }
   }
 
-  using Result_ = std::pair<BasePtr_, BasePtr_>;
-  Result_ result = Result_(node, parent);
-  iterator it(parent);
-
-  if (is_compare) {
-    if (it != begin()) {
-      --it;
-    }
-    if (!key_compare_(GetKey(it.node_), k)) {
-      result = Result_(it.node_, BasePtr_());
-    }
+  if (found_duplicate) {
+    result = std::make_pair(parent, BasePtr_());
   } else {
-    if (!key_compare_(GetKey(it.node_), k)) {
-      result = Result_(it.node_, BasePtr_());
-    }
+    result = std::make_pair(BasePtr_(), parent);
   }
 
   return result;
