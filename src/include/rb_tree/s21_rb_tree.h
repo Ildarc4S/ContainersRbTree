@@ -82,6 +82,7 @@ private:
   std::pair<BasePtr_, BasePtr_> GetInsertEqualPos(const key_type& k);
 
   iterator LowerBound(BasePtr_ x, BasePtr_ y, const Key_& key);
+  iterator UpperBound(BasePtr_ x, BasePtr_ y, const Key_& key);
 
   static void RotateLeft(BasePtr_ x, BasePtr_& root);
   static void RotateRight(BasePtr_ x,  BasePtr_& root);
@@ -106,18 +107,14 @@ public:
   RbTree& operator=(const RbTree& other_tree);
   RbTree& operator=(RbTree&& other_tree);
 
-
   template<typename Arg_>
   std::pair<iterator, bool> InsertUnique(Arg_&& x);
 
   template<typename Arg_>
-  std::pair<iterator, bool> InsertEqual(Arg_&& x);
+  iterator InsertEqual(Arg_&& x);
 
   template<typename Arg_>
   iterator InsertHintUnique(iterator hint, Arg_&& x);
-
-  // template<typename Arg_>
-  // iterator InsertHintEqual(iterator hint, Arg_&& x);
 
   template<typename Iter_>
   requires rb_tree::SameValueType<value_type, Iter_>
@@ -129,15 +126,24 @@ public:
 
   iterator Erase(iterator position);
   iterator LowerBound(const key_type& key);
+  iterator UpperBound(const key_type& key);
+  std::pair<iterator, iterator> EqualRange(const key_type& key);
   iterator Find(const key_type& key);
+
+  template <typename OtherCompare_, typename GetPosFunc>
+  void Merge(OtherTree_<OtherCompare_>& other_tree, GetPosFunc get_pos) noexcept;
 
   template<typename OtherCompare_>
   void MergeUnique(OtherTree_<OtherCompare_>& other_tree) noexcept;
+
+  template<typename OtherCompare_>
+  void MergeEqual(OtherTree_<OtherCompare_>& other_tree) noexcept;
 
   void Swap(RbTree& other_tree);
 
   bool Empty() const noexcept;
   size_type Size() const noexcept;
+  size_type Count(const Key_& key);
   size_type MaxSize() const noexcept;
   void Clear() noexcept;
 
@@ -596,18 +602,10 @@ RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::InsertUnique(Arg_&& x) {
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
 template<typename Arg_>
-std::pair<typename RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator,
-          bool>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::InsertEqual(Arg_&& x) {
-  using Result_ = std::pair<iterator, bool>;
   std::pair<BasePtr_, BasePtr_> res = GetInsertEqualPos(KeyOfValue_()(x));
-  Result_ result = Result_(res.first, false);
-
-  if (res.second) {
-    result =  Result_(InsertNode(res.first, res.second, std::forward<Arg_>(x)), true);
-  }
-
-  return result;
+  return InsertNode(res.first, res.second, std::forward<Arg_>(x));
 }
 
 template<typename Key_, typename Val_, typename KeyOfValue_,
@@ -645,15 +643,15 @@ Erase(iterator position) {
 
 template<typename Key_, typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
-template <typename OtherCompare_>
+template <typename OtherCompare_, typename GetPosFunc>
 void
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
-MergeUnique(OtherTree_<OtherCompare_>& other_tree) noexcept {
+Merge(OtherTree_<OtherCompare_>& other_tree, GetPosFunc get_pos) noexcept {
   auto it = other_tree.begin();
   auto end = other_tree.end();
   while (it != end) {
     auto current = it++;
-    auto pos = GetInsertUniquePos(KeyOfValue_()(*current));
+    auto pos = get_pos(KeyOfValue_()(*current));
 
     if (pos.second) {
       auto& other_impl = RbTreeMergeHelper<RbTree, OtherCompare_>::GetImpl(other_tree);
@@ -668,6 +666,28 @@ MergeUnique(OtherTree_<OtherCompare_>& other_tree) noexcept {
       ++impl_.node_count_;
     }
   }
+}
+
+template<typename Key_, typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+template <typename OtherCompare_>
+void
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+MergeUnique(OtherTree_<OtherCompare_>& other_tree) noexcept {
+  Merge(other_tree, [this](const key_type& key) {
+    return GetInsertUniquePos(key);
+  });
+}
+
+template<typename Key_, typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+template <typename OtherCompare_>
+void
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+MergeEqual(OtherTree_<OtherCompare_>& other_tree) noexcept {
+  Merge(other_tree, [this](const key_type& key) {
+    return GetInsertEqualPos(key);
+  });
 }
 
 template<typename Key_, typename Val_, typename KeyOfValue_,
@@ -697,6 +717,15 @@ RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::size_type
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
 Size() const noexcept {
   return impl_.node_count_;
+}
+
+template<typename Key_, typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::size_type
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+Count(const Key_& key) {
+  auto range = EqualRange(key);
+  return rb_tree::distance(range.first, range.second);
 }
 
 template<typename Key_, typename Val_, typename KeyOfValue_,
@@ -882,6 +911,49 @@ RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::LowerBound(const Key_& key) {
   return LowerBound(GetBegin(), GetEnd(), key);
 }
 
+template<typename Key_,     typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::UpperBound(const Key_& key) {
+  return UpperBound(GetBegin(), GetEnd(), key);
+}
+
+template<typename Key_,     typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+std::pair<
+  typename RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator,
+  typename RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator
+>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+EqualRange(const Key_& key) {
+  BasePtr_ current_node = GetBegin();
+  BasePtr_ upper_bound_candidate = GetEnd();
+
+  std::pair<iterator, iterator> result{
+    iterator(upper_bound_candidate),
+    iterator(upper_bound_candidate)};
+  bool found = false;
+
+  while (current_node && !found) {
+    if (key_compare_(GetKey(current_node), key)) {
+      current_node = GetRight(current_node);
+    } else if (key_compare_(key, GetKey(current_node))) {
+      upper_bound_candidate = current_node;
+      current_node = GetLeft(current_node);
+    } else {
+      iterator lower_bound = LowerBound(GetLeft(current_node),
+                                        current_node, key);
+      iterator upper_bound = UpperBound(GetRight(current_node),
+                                        upper_bound_candidate, key);
+
+      result = std::make_pair(lower_bound, upper_bound);
+      found = true;
+    }
+  }
+
+  return result;
+}
+
 template<typename Key_, typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
 template<typename Iter_>
@@ -914,6 +986,24 @@ RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::LowerBound(BasePtr_ x,
                                                               const Key_& key) {
   while (x) {
     if (!key_compare_(GetKey(x), key)) {
+      y = x;
+      x = GetLeft(x);
+    } else {
+      x = GetRight(x);
+    }
+  }
+
+  return iterator(y);
+}
+
+template<typename Key_,     typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::UpperBound(BasePtr_ x,
+                                                              BasePtr_ y,
+                                                              const Key_& key) {
+  while (x) {
+    if (key_compare_(key, GetKey(x))) {
       y = x;
       x = GetLeft(x);
     } else {
