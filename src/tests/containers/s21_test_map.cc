@@ -133,13 +133,11 @@ TEST(MapTest, StringCustomComparator) {
 }
 
 TEST(MapTest, AtMethods) {
-  // At с стандартным компаратором
   s21::Map<int, std::string> map{{1, "one"}, {2, "two"}};
   EXPECT_EQ(map.At(1), "one");
   EXPECT_EQ(map.At(2), "two");
   EXPECT_THROW(map.At(999), std::out_of_range);
 
-  // At с обратным компаратором
   s21::Map<int, std::string, std::greater<int>> map_greater{{3, "three"}, {1, "one"}};
   EXPECT_EQ(map_greater.At(3), "three");
   EXPECT_EQ(map_greater.At(1), "one");
@@ -147,15 +145,13 @@ TEST(MapTest, AtMethods) {
 }
 
 TEST(MapTest, SubscriptOperator) {
-  // operator[] с стандартным компаратором
   s21::Map<int, std::string> map;
   map[1] = "one";
   map[2] = "two";
   EXPECT_EQ(map[1], "one");
   EXPECT_EQ(map[2], "two");
-  EXPECT_EQ(map[3], ""); // Создает новый элемент
+  EXPECT_EQ(map[3], "");
 
-  // operator[] с обратным компаратором
   s21::Map<int, std::string, std::greater<int>> map_greater;
   map_greater[5] = "five";
   map_greater[2] = "two";
@@ -164,7 +160,6 @@ TEST(MapTest, SubscriptOperator) {
 }
 
 TEST(MapTest, InsertMethods) {
-  // Insert с стандартным компаратором
   s21::Map<int, std::string> map;
   auto result1 = map.Insert({1, "one"});
   EXPECT_TRUE(result1.second);
@@ -174,7 +169,6 @@ TEST(MapTest, InsertMethods) {
   EXPECT_FALSE(result2.second);
   EXPECT_EQ(result2.first->second, "one");
 
-  // Insert с обратным компаратором
   s21::Map<int, std::string, std::greater<int>> map_greater;
   auto result3 = map_greater.Insert({10, "ten"});
   EXPECT_TRUE(result3.second);
@@ -182,7 +176,6 @@ TEST(MapTest, InsertMethods) {
 }
 
 TEST(MapTest, InsertOrAssign) {
-  // InsertOrAssign с стандартным компаратором
   s21::Map<int, std::string> map;
   auto result1 = map.InsertOrAssign(1, "one");
   EXPECT_TRUE(result1.second);
@@ -192,7 +185,6 @@ TEST(MapTest, InsertOrAssign) {
   EXPECT_FALSE(result2.second);
   EXPECT_EQ(result2.first->second, "new_one");
 
-  // InsertOrAssign с обратным компаратором
   s21::Map<int, std::string, std::greater<int>> map_greater;
   auto result3 = map_greater.InsertOrAssign(5, "five");
   EXPECT_TRUE(result3.second);
@@ -200,13 +192,10 @@ TEST(MapTest, InsertOrAssign) {
 }
 
 TEST(MapTest, Erase) {
-  // Erase с стандартным компаратором
   s21::Map<int, std::string> map{{1, "one"}, {2, "two"}, {3, "three"}};
-  
-  // Сохраняем начальный размер
+
   size_t initial_size = map.Size();
-  
-  // Итерируем чтобы найти элемент с ключом 2
+
   auto it = map.Begin();
   while (it != map.End() && it->first != 2) {
     ++it;
