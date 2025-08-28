@@ -1,5 +1,5 @@
-#ifndef _S21_Set_H_
-#define _S21_Set_H_
+#ifndef _S21_SET_H_
+#define _S21_SET_H_
 
 #include <functional>
 #include <memory>
@@ -186,4 +186,4 @@ Set<Key_, Compare_, Alloc_>::Contains(const key_type& key) {
 
 } //  namespace s21
 
-#endif //  _S21_Set_H_
+#endif //  _S21_SET_H_
