@@ -70,9 +70,9 @@ RBTree<T, Compare>::~RBTree() {
 }
 
 template <typename T, typename Compare>
-RBTree<T, Compare>::Node* 
-RBTree<T, Compare>::getRoot() { 
-  return root_; 
+RBTree<T, Compare>::Node*
+RBTree<T, Compare>::getRoot() {
+  return root_;
 }
 
 /*
@@ -218,9 +218,9 @@ void RBTree<T, Compare>::remove(Node* node) {
     x_parent = y;
 
     if (y->parent_ == node) {
-        if (x != nullptr) {
-          x->parent_ = y;
-        }
+      if (x != nullptr) {
+        x->parent_ = y;
+      }
     } else {
       transplant(y, y->right_);
       y->right_ = node->right_;
