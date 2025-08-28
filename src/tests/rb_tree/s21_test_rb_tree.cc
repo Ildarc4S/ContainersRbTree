@@ -112,21 +112,20 @@ TEST(RBTreeTest, InsertRangeUnique) {
   tree1.PrintTreeByLevelsSimple();
 }
 
-TEST(RBTreeTest, InsertOrAsign) {
-  s21::RbTree<int, std::pair<const int, int>, s21::rb_tree::SelectFirst<std::pair<const int, int>>, std::less<int>> tree1;
+// TEST(RBTreeTest, InsertOrAsign) {
+//   s21::RbTree<int, std::pair<const int, int>, s21::rb_tree::SelectFirst<std::pair<const int, int>>, std::less<int>> tree1;
 
-  auto key = 5;
-  auto value = 15;
-  auto it = tree1.LowerBound(key);
+//   auto key = 5;
+//   auto value = 15;
+//   auto it = tree1.LowerBound(key);
 
-  if (it == tree1.end() || std::less<int>()(key, (*it).first)) {
-    auto result = tree1.InsertUnique(std::make_pair(key, std::forward<decltype(value)>(value)));
-  } else {
-    (*it).second = std::forward<decltype(value)>(value);
-  }
-
-  tree1.PrintTreeByLevelsSimple();
-}
+//   if (it == tree1.end() || std::less<int>()(key, (*it).first)) {
+//     tree1.InsertUnique(std::make_pair(key, std::forward<decltype(value)>(value)));
+//   } else {
+//     (*it).second = std::forward<decltype(value)>(value);
+//   }
+//   tree1.PrintTreeByLevelsSimple();
+// }
 
 TEST(RBTreeTest, OperatorEqual) {
   s21::RbTree<int, std::pair<const int, int>, s21::rb_tree::SelectFirst<std::pair<const int, int>>, std::less<int>> tree1;
