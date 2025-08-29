@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 4.0)
-
 set(CONTAINER_TESTS
   s21_test_set.cc
   s21_test_map.cc

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.30)
 project(S21Containers LANGUAGES CXX)
 
 option(COVERAGE "Enable code coverage reporting" OFF)

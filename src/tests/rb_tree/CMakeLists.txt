@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 4.0)
-
 set(RB_TREE_TESTS
   s21_test_rb_tree.cc
   s21_test_rb_tree_utils.cc
