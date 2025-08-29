@@ -80,7 +80,7 @@ public:
   template<typename OtherCompare_>
   void Merge(OtherMap_<OtherCompare_>& other);
 
-  bool Contains(const key_type& key);
+  bool Contains(const key_type& key) const;
 };
 
 template<typename Key_, typename Val_, typename Compare_,
@@ -223,7 +223,7 @@ Map<Key_, T_, Compare_, Alloc_>::Merge(OtherMap_<OtherCompare_>& other) {
 
 template <typename Key_, typename T_, typename Compare_, typename Alloc_>
 bool
-Map<Key_, T_, Compare_, Alloc_>::Contains(const key_type& key) {
+Map<Key_, T_, Compare_, Alloc_>::Contains(const key_type& key) const {
   return rb_tree_.Find(key) != rb_tree_.end();
 }
 
