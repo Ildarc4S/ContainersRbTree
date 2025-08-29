@@ -56,7 +56,7 @@ private:
   BasePtr_ GetEnd() const noexcept;
   BasePtr_ GetLeft(BasePtr_ node) const noexcept;
   BasePtr_ GetRight(BasePtr_ node) const noexcept;
-  const Key_& GetKey(const BasePtr_ node);
+  const Key_& GetKey(const BasePtr_ node) const;
 
   NodePtr_ NewNode();
   void DeleteNode(NodePtr_ node_ptr);
@@ -81,8 +81,8 @@ private:
 
   std::pair<BasePtr_, BasePtr_> GetInsertEqualPos(const key_type& k);
 
-  iterator LowerBound(BasePtr_ x, BasePtr_ y, const Key_& key);
-  iterator UpperBound(BasePtr_ x, BasePtr_ y, const Key_& key);
+  iterator LowerBound(BasePtr_ x, BasePtr_ y, const Key_& key) const;
+  iterator UpperBound(BasePtr_ x, BasePtr_ y, const Key_& key) const;
 
   static void RotateLeft(BasePtr_ x, BasePtr_& root);
   static void RotateRight(BasePtr_ x,  BasePtr_& root);
@@ -125,10 +125,16 @@ public:
   void InsertRangeEqual(Iter_ begin, Iter_ end);
 
   iterator Erase(iterator position);
+
   iterator LowerBound(const key_type& key);
   iterator UpperBound(const key_type& key);
-  std::pair<iterator, iterator> EqualRange(const key_type& key);
+
+  const_iterator LowerBound(const key_type& key) const;
+  const_iterator UpperBound(const key_type& key) const;
+
+  std::pair<iterator, iterator> EqualRange(const key_type& key) const;
   iterator Find(const key_type& key);
+  const_iterator Find(const key_type& key) const;
 
   template <typename OtherCompare_, typename GetPosFunc>
   void Merge(OtherTree_<OtherCompare_>& other_tree, GetPosFunc get_pos) noexcept;
@@ -143,7 +149,7 @@ public:
 
   bool Empty() const noexcept;
   size_type Size() const noexcept;
-  size_type Count(const Key_& key);
+  size_type Count(const Key_& key) const;
   size_type MaxSize() const noexcept;
   void Clear() noexcept;
 
@@ -350,7 +356,7 @@ RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::GetRight(BasePtr_ node) const
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
 const Key_&
-RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::GetKey(BasePtr_ node_ptr) {
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::GetKey(BasePtr_ node_ptr) const {
   const Node_& node = static_cast<const Node_&>(*node_ptr);
   static_assert(std::is_invocable_v<const Compare_&, const Key_&, const Key_&>,
               "Comparison object must be invocable as const with two key arguments");
@@ -717,7 +723,7 @@ template<typename Key_, typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::size_type
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
-Count(const Key_& key) {
+Count(const Key_& key) const {
   auto range = EqualRange(key);
   return rb_tree::distance(range.first, range.second);
 }
@@ -914,12 +920,26 @@ RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::UpperBound(const Key_& key) {
 
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::const_iterator
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::LowerBound(const Key_& key) const {
+  return const_iterator(LowerBound(GetBegin(), GetEnd(), key));
+}
+
+template<typename Key_,     typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::const_iterator
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::UpperBound(const Key_& key) const {
+  return const_iterator(UpperBound(GetBegin(), GetEnd(), key));
+}
+
+template<typename Key_,     typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
 std::pair<
   typename RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator,
   typename RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator
 >
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
-EqualRange(const Key_& key) {
+EqualRange(const Key_& key) const {
   BasePtr_ current_node = GetBegin();
   BasePtr_ upper_bound_candidate = GetEnd();
 
@@ -975,9 +995,8 @@ InsertRangeEqual(Iter_ begin, Iter_ end) {
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator
-RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::LowerBound(BasePtr_ x,
-                                                              BasePtr_ y,
-                                                              const Key_& key) {
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+LowerBound(BasePtr_ x, BasePtr_ y, const Key_& key)  const {
   while (x) {
     if (!key_compare_(GetKey(x), key)) {
       y = x;
@@ -993,9 +1012,8 @@ RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::LowerBound(BasePtr_ x,
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator
-RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::UpperBound(BasePtr_ x,
-                                                              BasePtr_ y,
-                                                              const Key_& key) {
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::
+UpperBound(BasePtr_ x, BasePtr_ y, const Key_& key) const {
   while (x) {
     if (key_compare_(key, GetKey(x))) {
       y = x;
@@ -1013,6 +1031,17 @@ template<typename Key_,     typename Val_, typename KeyOfValue_,
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::iterator
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::Find(const key_type& key) {
   iterator it = LowerBound(key);
+  if (it != end() && key_compare_(key, GetKey(it.node_))) {
+    it = end();
+  }
+  return it;
+}
+
+template<typename Key_,     typename Val_, typename KeyOfValue_,
+         typename Compare_, typename Alloc_>
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::const_iterator
+RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::Find(const key_type& key) const {
+  const_iterator it = LowerBound(key);
   if (it != end() && key_compare_(key, GetKey(it.node_))) {
     it = end();
   }
