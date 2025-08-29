@@ -511,3 +511,10 @@ TEST(SetTest, DoubleSetOperations) {
   result = set.Insert(1.1);
   EXPECT_FALSE(result.second);
 }
+
+TEST(SetTest, EraseThrowsWhenPositionIsEnd) {
+  s21::Set<int> set = {1, 2, 3};
+  auto end_it = set.End();
+
+  EXPECT_THROW(set.Erase(end_it), std::out_of_range);
+}
