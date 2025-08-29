@@ -74,14 +74,15 @@ public:
   void Merge(OtherSet_<OtherCompare_>& other_set);
 
   iterator Find(const key_type& key);
-  bool Contains(const key_type& key);
+  const_iterator Find(const key_type& key) const;
+  bool Contains(const key_type& key) const;
 };
 
 template<typename Key_, typename Compare_, typename Alloc_, typename OtherCompare_>
 struct
 RbTreeMergeHelper<Set<Key_, Compare_, Alloc_>, OtherCompare_> {
 private:
-  friend class Set<Key_, OtherCompare_, Alloc_>;
+  friend class Set<Key_, Compare_, Alloc_>;
 
   static auto&
   GetRbTree(Set<Key_, OtherCompare_, Alloc_>& other_set) {
@@ -179,8 +180,14 @@ Set<Key_, Compare_, Alloc_>::Find(const key_type& key) {
 }
 
 template <typename Key_, typename Compare_, typename Alloc_>
+Set<Key_, Compare_, Alloc_>::const_iterator
+Set<Key_, Compare_, Alloc_>::Find(const key_type& key) const {
+  return rb_tree_.Find(key);
+}
+
+template <typename Key_, typename Compare_, typename Alloc_>
 bool
-Set<Key_, Compare_, Alloc_>::Contains(const key_type& key) {
+Set<Key_, Compare_, Alloc_>::Contains(const key_type& key) const {
   return rb_tree_.Find(key) != rb_tree_.end();
 }
 
