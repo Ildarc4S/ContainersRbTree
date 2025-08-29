@@ -110,18 +110,6 @@ struct Node : public NodeBase<PtrTraitsRebind_<ValPtr_, void>> {
   NodePtr_ GetNodePtr() noexcept;
 };
 
-// template <typename KeyCompare_>
-// struct KeyCompare {
-//   KeyCompare_ key_compare_;
-
-//   KeyCompare()
-//     noexcept(std::is_nothrow_default_constructible_v<KeyCompare_>);
-//   KeyCompare(const KeyCompare& other) = default;
-//   KeyCompare(KeyCompare&& other)
-//     noexcept(std::is_nothrow_default_constructible_v<KeyCompare_>);
-//   explicit KeyCompare(const KeyCompare_& other);
-// };
-
 template <bool IsConst_, typename ValPtr_>
 struct Iterator {
 
@@ -340,7 +328,10 @@ Iterator<IsConst_, ValPtr_>::operator++() noexcept {
 template <bool IsConst_, typename ValPtr_>
 constexpr Iterator<IsConst_, ValPtr_>&
 Iterator<IsConst_, ValPtr_>::operator--() noexcept {
-  if (node_->left_) {
+  if (node_->parent_->parent_ == node_
+      && node_->color_ == NodeColor::kRed) {
+    node_ = node_->right_;
+  } else if (node_->left_) {
     node_ = NodeBase_::Maximum(node_->left_);
   } else {
     BasePtr_ parent = node_->parent_;
@@ -348,10 +339,7 @@ Iterator<IsConst_, ValPtr_>::operator--() noexcept {
       node_ = parent;
       parent = parent->parent_;
     }
-
-    if (node_->left_ != parent) {
-      node_ = parent;
-    }
+    node_ = parent;
   }
 
   return *this;
