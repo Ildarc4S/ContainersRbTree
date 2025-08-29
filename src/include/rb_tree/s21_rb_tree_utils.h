@@ -23,6 +23,13 @@ struct SelectFirst {
   const pair_first& operator()(const Pair_& pair) const noexcept;
 };
 
+template<typename T_>
+struct Identity {
+  using type = T_;
+  type& operator()(type& value) const noexcept;
+  const type& operator()(const type& value) const noexcept;
+};
+
 template<typename Pair_>
 SelectFirst<Pair_>::pair_first&
 SelectFirst<Pair_>::operator()(Pair_& pair) const noexcept {
@@ -34,13 +41,6 @@ const SelectFirst<Pair_>::pair_first&
 SelectFirst<Pair_>::operator()(const Pair_& pair) const noexcept {
   return pair.first;
 }
-
-template<typename T_>
-struct Identity {
-  using type = T_;
-  type& operator()(type& value) const noexcept;
-  const type& operator()(const type& value) const noexcept;
-};
 
 template<typename T_>
 Identity<T_>::type&
