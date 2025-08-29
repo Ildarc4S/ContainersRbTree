@@ -922,14 +922,14 @@ template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::const_iterator
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::LowerBound(const Key_& key) const {
-  return const_iterator(LowerBound(GetBegin(), GetEnd(), key));
+  return LowerBound(GetBegin(), GetEnd(), key);
 }
 
 template<typename Key_,     typename Val_, typename KeyOfValue_,
          typename Compare_, typename Alloc_>
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::const_iterator
 RbTree<Key_, Val_, KeyOfValue_, Compare_, Alloc_>::UpperBound(const Key_& key) const {
-  return const_iterator(UpperBound(GetBegin(), GetEnd(), key));
+  return UpperBound(GetBegin(), GetEnd(), key);
 }
 
 template<typename Key_,     typename Val_, typename KeyOfValue_,
@@ -945,7 +945,9 @@ EqualRange(const Key_& key) const {
 
   std::pair<iterator, iterator> result{
     iterator(upper_bound_candidate),
-    iterator(upper_bound_candidate)};
+    iterator(upper_bound_candidate)
+  };
+
   bool found = false;
 
   while (current_node && !found) {
