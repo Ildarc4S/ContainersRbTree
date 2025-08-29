@@ -53,6 +53,11 @@ span.tlaGNC {
     background-color: var(--lineCov-bg);
 }
 
+span.tlaUNC {
+  text-align: left;
+  background-color: #5a2a2a;
+}
+
 td.lineCov,
 span.lineCov {
   background-color: var(--lineCov-bg);
@@ -74,7 +79,19 @@ td.headerCovTableEntryHi
   white-space: nowrap;
   padding-left: 12px;
   padding-right: 4px;
-  background-color: #a7fc9d;
+  background-color: #1bea59;
+}
+
+td.headerCovTableEntryMed
+{
+  text-align: right;
+  color: #000000;
+  font-family: sans-serif;
+  font-weight: bold;
+  white-space: nowrap;
+  padding-left: 12px;
+  padding-right: 4px;
+  background-color: #ffe050;
 }
 
 .source > a {
