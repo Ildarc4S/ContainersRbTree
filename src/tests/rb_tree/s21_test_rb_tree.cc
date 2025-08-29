@@ -1,204 +1,283 @@
 #include <gtest/gtest.h>
 #include <functional>
+#include <memory>
 
 #include "../../include/rb_tree/s21_rb_tree.h"
+#include "../../include/s21_map.h"
 
-TEST(RBTreeTest, OperatorBracket) {
-  s21::RbTree<int, std::pair<const int, int>, s21::rb_tree::SelectFirst<std::pair<const int, int>>, std::less<int>> tree1;
+namespace s21rb = s21::rb_tree;
+using MapTree = s21::RbTree<int, std::pair<const int, std::string>, 
+                          s21::rb_tree::SelectFirst<std::pair<const int, std::string>>,
+                          std::less<int>, std::allocator<std::pair<const int, std::string>>>;
 
-  tree1.InsertUnique(std::pair<const int, int>(1, 2));
-  tree1.InsertUnique(std::pair<const int, int>(2, 2));
-  tree1.PrintTreeByLevelsSimple();
 
-  int key = 3;
-  auto it = tree1.LowerBound(key);
-  if (it == tree1.end() || std::less<int>()(key, (*it).first)) {
-    it = tree1.InsertHintUnique(it, key);
-  }
-  (*it).second = 3;
+TEST(RbTreeTest, InsertHintEnd) {
+  MapTree tree;
+  tree.InsertUnique(std::make_pair(50, "fifty"));
+  tree.InsertUnique(std::make_pair(70, "seventy"));
 
-  tree1.PrintTreeByLevelsSimple();
+  auto hint = tree.end();
+  auto result = tree.InsertHintUnique(hint, 90);
+
+  EXPECT_TRUE(result != tree.end());
+  EXPECT_EQ(result->first, 90);
+}
+
+TEST(RbTreeTest, InsertHintBegin) {
+  MapTree tree;
+  tree.InsertUnique(std::make_pair(50, "fifty"));
+  tree.InsertUnique(std::make_pair(30, "thirty"));
+
+  auto hint = tree.end();
+  auto result = tree.InsertHintUnique(hint, 10);
+
+  EXPECT_TRUE(result != tree.end());
+  EXPECT_EQ(result->first, 10);
+}
+
+TEST(RbTreeTest, InsertHintMiddle) {
+  MapTree tree;
+  tree.InsertUnique(std::make_pair(50, "fifty"));
+  tree.InsertUnique(std::make_pair(30, "thirty"));
+  tree.InsertUnique(std::make_pair(40, "forty"));
+
+  auto hint = tree.Find(40);
+  auto result = tree.InsertHintUnique(hint, 35);
+
+  EXPECT_TRUE(result != tree.end());
+  EXPECT_EQ(result->first, 35);
+}
+
+TEST(RbTreeTest, InsertHintDuplicate) {
+    MapTree tree;
+    tree.InsertUnique(std::make_pair(50, "fifty"));
+
+    auto hint = tree.Find(50);
+    auto result = tree.InsertHintUnique(hint, 50);
+
+    EXPECT_TRUE(result != tree.end());
+    EXPECT_EQ(result->first, 50);
 }
 
 
-TEST(RBTreeTest, MethodAt) {
-  s21::RbTree<int, std::pair<const int, int>, s21::rb_tree::SelectFirst<std::pair<const int, int>>, std::less<int>> tree1;
+TEST(RbTreeTest, InsertHintNearMax) {
+  MapTree tree;
+  tree.InsertUnique(std::make_pair(50, "fifty"));
+  tree.InsertUnique(std::make_pair(80, "eighty"));
 
-  tree1.InsertUnique(std::pair<const int, int>(1, 11));
-  tree1.InsertUnique(std::pair<const int, int>(2, 21));
-  tree1.PrintTreeByLevelsSimple();
+  auto hint = tree.Find(80);
+  auto result = tree.InsertHintUnique(hint, 85);
 
-  auto key = 1;
-  auto it = tree1.LowerBound(key);
-  if (it == tree1.end() || std::less<int>()(key, it->first)) {
-      throw std::out_of_range("map::at: key not found");
-  }
-  std::cout << "at(): " << it->second << std::endl;
+  EXPECT_TRUE(result != tree.end());
+  EXPECT_EQ(result->first, 85);
 }
 
-TEST(RBTreeTest, Contains) {
-  s21::RbTree<int, std::pair<const int, int>, s21::rb_tree::SelectFirst<std::pair<const int, int>>, std::less<int>> tree1;
+TEST(RbTreeTest, InsertHintNearMin) {
+  MapTree tree;
+  tree.InsertUnique(std::make_pair(50, "fifty"));
+  tree.InsertUnique(std::make_pair(20, "twenty"));
 
-  tree1.InsertUnique(std::pair<const int, int>(1, 11));
+  auto hint = tree.Find(20);
+  auto result = tree.InsertHintUnique(hint, 15);
 
-  auto key = 1;
-  std::cout << (tree1.Find(key) != tree1.end()
-                ? "Exists"
-                : "Not Exists") << std::endl;
-}
-
-TEST(RBTreeTest, Erase) {
-  s21::RbTree<int, std::pair<const int, int>, s21::rb_tree::SelectFirst<std::pair<const int, int>>, std::less<int>> tree1;
-
-  tree1.InsertUnique(std::pair<const int, int>(1, 11));
-  tree1.InsertUnique(std::pair<const int, int>(2, 21));
-  tree1.PrintTreeByLevelsSimple();
-
-  tree1.Erase(tree1.begin());
-  tree1.Erase(tree1.begin());
-
-  tree1.PrintTreeByLevelsSimple();
+  EXPECT_TRUE(result != tree.end());
+  EXPECT_EQ(result->first, 15);
 }
 
 
-TEST(RBTreeTest, MergeTree) {
-  s21::RbTree<int, std::pair<const int, int>, s21::rb_tree::SelectFirst<std::pair<const int, int>>, std::less<int>> tree1;
-  s21::RbTree<int, std::pair<const int, int>, s21::rb_tree::SelectFirst<std::pair<const int, int>>, std::less<int>> tree2;
+TEST(RbTreeTest, InsertHintRightSideNeedUniquePos) {
+    using MapTree = s21::RbTree<int, std::pair<const int, std::string>,
+                              s21::rb_tree::SelectFirst<std::pair<const int, std::string>>,
+                              std::less<int>, std::allocator<std::pair<const int, std::string>>>;
 
-  tree1.InsertUnique(std::pair<const int, int>(1, 11));
-  tree1.InsertUnique(std::pair<const int, int>(2, 21));
-  tree1.PrintTreeByLevelsSimple();
+    MapTree tree;
+    /* Дерево:
+          50
+         /  \
+        30   70
+             / \
+            65  80
+    */
+    tree.InsertUnique(std::make_pair(50, "50"));
+    tree.InsertUnique(std::make_pair(30, "30"));
+    tree.InsertUnique(std::make_pair(70, "70"));
+    tree.InsertUnique(std::make_pair(65, "65"));
+    tree.InsertUnique(std::make_pair(80, "80"));
 
-  tree2.InsertUnique(std::pair<const int, int>(1, 11));
-  tree2.InsertUnique(std::pair<const int, int>(2, 21));
-  tree2.InsertUnique(std::pair<const int, int>(3, 21));
-  tree2.PrintTreeByLevelsSimple();
+    // 1. key_compare_(GetKey(70), 75) = 70 < 75 → true
+    // 2. x != impl_.header_.right_ (70 ≠ 80)
+    // 3. after = ++iterator(70) = 80
+    // 4. !key_compare_(75, GetKey(80)) = !(75 < 80) = !true = false
+    // 5. Попадаем в else: result = GetInsertUniquePos(k)
+    auto hint = tree.Find(70);
+    auto result = tree.InsertHintUnique(hint, 75);
 
-  tree1.MergeUnique(tree2);
-
-  tree1.PrintTreeByLevelsSimple();
+    EXPECT_TRUE(result != tree.end());
+    EXPECT_EQ(result->first, 75);
 }
 
-TEST(RBTreeTest, SwapTree) {
-  s21::RbTree<int, std::pair<const int, int>, s21::rb_tree::SelectFirst<std::pair<const int, int>>, std::less<int>> tree1;
-  s21::RbTree<int, std::pair<const int, int>, s21::rb_tree::SelectFirst<std::pair<const int, int>>, std::less<int>> tree2;
+TEST(RbTreeTest, InsertHintLeftmost) {
+    using MapTree = s21::RbTree<int, std::pair<const int, std::string>,
+                              s21::rb_tree::SelectFirst<std::pair<const int, std::string>>,
+                              std::less<int>, std::allocator<std::pair<const int, std::string>>>;
 
-  tree1.InsertUnique(std::pair<const int, int>(1, 11));
-  tree1.InsertUnique(std::pair<const int, int>(2, 21));
-  tree1.PrintTreeByLevelsSimple();
+    MapTree tree;
+    tree.InsertUnique(std::make_pair(50, "50"));
+    tree.InsertUnique(std::make_pair(30, "30"));
+    tree.InsertUnique(std::make_pair(70, "70"));
 
-  tree2.InsertUnique(std::pair<const int, int>(1, 11));
-  tree2.InsertUnique(std::pair<const int, int>(2, 21));
-  tree2.InsertUnique(std::pair<const int, int>(3, 21));
-  tree2.PrintTreeByLevelsSimple();
+    auto hint = tree.begin();
+    auto result = tree.InsertHintUnique(hint, 20);
 
-  tree1.Swap(tree2);
-
-  tree1.PrintTreeByLevelsSimple();
-  tree2.PrintTreeByLevelsSimple();
+    EXPECT_TRUE(result != tree.end());
+    EXPECT_EQ(result->first, 20);
 }
 
-TEST(RBTreeTest, InsertRangeUnique) {
-  s21::RbTree<int, std::pair<const int, int>, s21::rb_tree::SelectFirst<std::pair<const int, int>>, std::less<int>> tree1;
-  std::initializer_list<std::pair<const int, int>> list = {
-    {1, 11},
-    {2, 12},
-    {3, 13},
-    {4, 14}
-  };
+TEST(RbTreeTest, InsertHintRightChild) {
+  using MapTree = s21::RbTree<int, std::pair<const int, std::string>,
+                            s21::rb_tree::SelectFirst<std::pair<const int, std::string>>,
+                            std::less<int>, std::allocator<std::pair<const int, std::string>>>;
 
-  tree1.InsertRangeUnique(list.begin(), list.end());
+  MapTree tree;
+  tree.InsertUnique(std::make_pair(50, "50"));
+  tree.InsertUnique(std::make_pair(30, "30"));
+  tree.InsertUnique(std::make_pair(70, "30"));
+  tree.InsertUnique(std::make_pair(20, "30"));
+  tree.InsertUnique(std::make_pair(40, "30"));
 
-  tree1.PrintTreeByLevelsSimple();
+  auto hint = tree.Find(40);
+  auto result = tree.InsertHintUnique(hint, 25);
+
+  EXPECT_TRUE(result != tree.end());
+  EXPECT_EQ(result->first, 25);
 }
 
-// TEST(RBTreeTest, InsertOrAsign) {
-//   s21::RbTree<int, std::pair<const int, int>, s21::rb_tree::SelectFirst<std::pair<const int, int>>, std::less<int>> tree1;
+TEST(RbTreeTest, InsertHintAtRightmost) {
+  using MapTree = s21::RbTree<int, std::pair<const int, std::string>,
+                            s21::rb_tree::SelectFirst<std::pair<const int, std::string>>,
+                            std::less<int>, std::allocator<std::pair<const int, std::string>>>;
 
-//   auto key = 5;
-//   auto value = 15;
-//   auto it = tree1.LowerBound(key);
+  MapTree tree;
+  tree.InsertUnique(std::make_pair(50, "50"));
+  tree.InsertUnique(std::make_pair(30, "30"));
+  tree.InsertUnique(std::make_pair(70, "30"));
 
-//   if (it == tree1.end() || std::less<int>()(key, (*it).first)) {
-//     tree1.InsertUnique(std::make_pair(key, std::forward<decltype(value)>(value)));
-//   } else {
-//     (*it).second = std::forward<decltype(value)>(value);
-//   }
-//   tree1.PrintTreeByLevelsSimple();
-// }
+  auto hint = tree.Find(70);
+  auto result = tree.InsertHintUnique(hint, 80);
 
-TEST(RBTreeTest, OperatorEqual) {
-  s21::RbTree<int, std::pair<const int, int>, s21::rb_tree::SelectFirst<std::pair<const int, int>>, std::less<int>> tree1;
-  std::initializer_list<std::pair<const int, int>> list = {
-    {1, 11},
-    {2, 12},
-    {3, 13},
-    {4, 14}
-  };
-  tree1.InsertRangeUnique(list.begin(), list.end());
-
-  s21::RbTree<int, std::pair<const int, int>, s21::rb_tree::SelectFirst<std::pair<const int, int>>, std::less<int>> tree2;
-  std::initializer_list<std::pair<const int, int>> list2 = {
-    {1, 21},
-    {2, 22},
-    {3, 23},
-    {3, 23},
-    {3, 23},
-    {4, 24},
-    {5, 25}
-  };
-  tree2.InsertRangeEqual(list2.begin(), list2.end());
-
-  tree1.PrintTreeByLevelsSimple();
-  tree2.PrintTreeByLevelsSimple();
-
-  tree1 = tree2;
-
-  tree1.PrintTreeByLevelsSimple();
-  tree2.PrintTreeByLevelsSimple();
+  EXPECT_TRUE(result != tree.end());
 }
 
-TEST(RBTreeTest, OperatorMoveEqual) {
-  s21::RbTree<int, std::pair<const int, int>, s21::rb_tree::SelectFirst<std::pair<const int, int>>, std::less<int>> tree1;
-  std::initializer_list<std::pair<const int, int>> list = {
-    {1, 11},
-    {2, 12},
-    {3, 13},
-    {4, 14}
-  };
-  tree1.InsertRangeUnique(list.begin(), list.end());
+TEST(RbTreeTest, InsertHintCurrentNoRightChild) {
+  using MapTree = s21::RbTree<int, std::pair<const int, std::string>,
+                            s21::rb_tree::SelectFirst<std::pair<const int, std::string>>,
+                            std::less<int>, std::allocator<std::pair<const int, std::string>>>;
 
-  s21::RbTree<int, std::pair<const int, int>, s21::rb_tree::SelectFirst<std::pair<const int, int>>, std::less<int>> tree2;
-  std::initializer_list<std::pair<const int, int>> list2 = {
-    {1, 21},
-    {2, 22},
-    {3, 23},
-    {4, 24},
-    {5, 25}
-  };
-  tree2.InsertRangeUnique(list2.begin(), list2.end());
+  MapTree tree;
+  /* Tree:
+      50
+    /  \
+   30   70
+  */
+  tree.InsertUnique(std::make_pair(50, "50"));
+  tree.InsertUnique(std::make_pair(30, "30"));
+  tree.InsertUnique(std::make_pair(70, "30"));
 
-  tree1.PrintTreeByLevelsSimple();
-  tree2.PrintTreeByLevelsSimple();
+  auto hint = tree.Find(70);
+  auto result = tree.InsertHintUnique(hint, 65);
 
-  tree1 = std::move(tree2);
-
-  tree1.PrintTreeByLevelsSimple();
-  tree2.PrintTreeByLevelsSimple();
+  EXPECT_TRUE(result != tree.end());
 }
 
-TEST(RBTreeTest, Iterator) {
-  s21::RbTree<int, std::pair<const int, int>, s21::rb_tree::SelectFirst<std::pair<const int, int>>, std::less<int>> tree1;
-  std::initializer_list<std::pair<const int, int>> list = {
-    {1, 11},
-    {2, 12},
-    {3, 13},
-    {4, 14}
-  };
-  tree1.InsertRangeUnique(list.begin(), list.end());
+TEST(RbTreeTest, InsertHintNoRightChildAndKeyGreaterEqualNext) {
+  using MapTree = s21::RbTree<int, std::pair<const int, std::string>,
+                            s21::rb_tree::SelectFirst<std::pair<const int, std::string>>,
+                            std::less<int>, std::allocator<std::pair<const int, std::string>>>;
+
+  MapTree tree;
+  /* Tree:
+       50
+      /  \
+     30   70
+          /
+        65
+  */
+  tree.InsertUnique(std::make_pair(50, "50"));
+  tree.InsertUnique(std::make_pair(30, "30"));
+  tree.InsertUnique(std::make_pair(70, "70"));
+  tree.InsertUnique(std::make_pair(65, "65"));
+
+  // 1. key_compare_(GetKey(65), 71) = 65 < 71 → true
+  // 2. after = ++iterator(65) = 70
+  // 3. !key_compare_(71, GetKey(70)) = !(71 < 70) = !false = true
+  // 4. !GetRight(65) = true
+  auto hint = tree.Find(65);
+  auto result = tree.InsertHintUnique(hint, 71);
+
+  EXPECT_TRUE(result != tree.end());
+}
+
+TEST(RbTreeTest, InsertHintRightChildAndKeyGreaterEqualNext) {
+  using MapTree = s21::RbTree<int, std::pair<const int, std::string>,
+                            s21::rb_tree::SelectFirst<std::pair<const int, std::string>>,
+                            std::less<int>, std::allocator<std::pair<const int, std::string>>>;
+
+  MapTree tree;
+  /* Tree:
+        50
+      /  \
+      30   70
+          /  \
+        65   75
+          \
+          68
+  */
+  tree.InsertUnique(std::make_pair(50, "50"));
+  tree.InsertUnique(std::make_pair(30, "30"));
+  tree.InsertUnique(std::make_pair(70, "70"));
+  tree.InsertUnique(std::make_pair(65, "65"));
+  tree.InsertUnique(std::make_pair(75, "75"));
+  tree.InsertUnique(std::make_pair(68, "68"));
+
+  // 1. key_compare_(GetKey(65), 72) = 65 < 72 → true
+  // 2. after = ++iterator(65) = 68
+  // 3. !key_compare_(72, GetKey(68)) = !(72 < 68) = !false = true
+  // 4. GetRight(65) = true
+  // 5. else: result.first = after.node_; result.second = after.node_;
+  auto hint = tree.Find(65);
+  auto result = tree.InsertHintUnique(hint, 72);
+
+  EXPECT_TRUE(result != tree.end());
+  EXPECT_EQ(result->first, 72);
+}
+
+TEST(RbTreeTest, InsertHintBeforeNodeNoRightChild) {
+    using MapTree = s21::RbTree<int, std::pair<const int, std::string>,
+                            s21::rb_tree::SelectFirst<std::pair<const int, std::string>>,
+                            std::less<int>, std::allocator<std::pair<const int, std::string>>>;
+
+  MapTree tree;
+    /* Дерево:
+         50
+        /  \
+       30   70
+       /
+      20
+    */
+  tree.InsertUnique(std::make_pair(50, "50"));
+  tree.InsertUnique(std::make_pair(30, "30"));
+  tree.InsertUnique(std::make_pair(70, "70"));
+  tree.InsertUnique(std::make_pair(20, "20"));
 
 
-  for (auto& a : tree1) {
-    std::cout << "{" << a.first << " " << a.second << "}" << std::endl;
-  }
+  // 1. key_compare_(15, GetKey(30)) = 15 < 30 → true
+  // 2. before = --iterator(30) = 20
+  // 3. !key_compare_(GetKey(20), 15) = !(20 < 15) = !false = true
+  // 4. !GetRight(before.node_) = !GetRight(20) = true
+  // 5. result.second = before.node_ = 20
+
+  auto hint = tree.Find(30);
+  auto result = tree.InsertHintUnique(hint, 15);
+
+  EXPECT_TRUE(result != tree.end());
 }
