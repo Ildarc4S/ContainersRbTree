@@ -21,18 +21,6 @@ test-%:
 test-verbose-%:
 	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) ctest -V -R ^$*$$
 
-.PHONY: cppcheck
-cppcheck:
-	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target cppcheck-test
-
-.PHONY: cppcheck-sources
-cppcheck-sources:
-	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target cppcheck-test-sources
-
-.PHONY: clang-tidy
-clang-tidy:
-	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target clang-tidy-test
-
 .PHONY: clang-format
 clang-format:
 	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target clang-format-test
@@ -45,13 +33,9 @@ clang-format-fix:
 valgrind:
 	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target valgrind-test
 
-.PHONY: valgrind-%
-valgrind-%:
-	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target valgrind_$*
-
 .PHONY: coverage
 coverage:
-	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target coverage_all
+	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) cmake --build . --target coverage
 
 .PHONY: help
 help:
@@ -60,15 +44,11 @@ help:
 	@echo 'make test                   — все тесты (ctest)'
 	@echo 'make test-<имя_теста>       — один тест (make test-s21_test_rb_tree)'
 	@echo 'make test-verbose-<имя>     — один тест подробно'
-	@echo 'make cppcheck               — static analysis (cppcheck)'
-	@echo 'make clang-tidy             — static analysis (clang-tidy)'
 	@echo 'make clang-format           — check code style'
 	@echo 'make clang-format-fix       — автоисправить стиль'
 	@echo 'make valgrind               — все тесты с valgrind'
-	@echo 'make valgrind-<имя_теста>   — один тест с valgrind'
 	@echo 'make coverage               — code coverage с генерацией html'
 
 .PHONY: clean
 clean:
 	docker run --rm -v $(PWD):/project -w /project $(IMAGE_NAME) rm -rf build
-
