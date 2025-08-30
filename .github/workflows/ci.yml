@@ -42,7 +42,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./docker/Dockerfile
+          file: .src/docker/Dockerfile
           load: true
           tags: s21containers
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -56,10 +56,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: build/coverage
+          path: src/build/coverage
 
       - name: List coverage directory
-        run: ls -la build/coverage
+        run: ls -la src/build/coverage
 
       - name: Deploy coverage report to GitHub Pages
         if: github.ref == 'refs/heads/rb_tree' || github.ref == 'refs/heads/develop'
