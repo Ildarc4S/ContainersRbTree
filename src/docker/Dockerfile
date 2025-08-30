@@ -20,9 +20,9 @@ RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /usr
 
 WORKDIR /project
 
-COPY CMakeLists.txt ./
-
 COPY . .
+
+WORKDIR /project/src
 
 #RUN cmake -DCOVERAGE=ON -B build -S .
 #RUN cmake --build build
