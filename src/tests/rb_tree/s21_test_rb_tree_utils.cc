@@ -2,7 +2,6 @@
 #include <memory>
 
 #include "s21_rb_tree_utils.h"
-#include "s21_test_utils.h"
 
 #define EXPECT_TYPE_SAME(T1, T2) \
   static_assert(std::is_same_v<T1, T2>, "Types should be the same"); \
