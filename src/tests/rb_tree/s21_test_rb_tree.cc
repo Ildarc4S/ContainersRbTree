@@ -3,13 +3,14 @@
 #include <memory>
 
 #include "../../include/rb_tree/s21_rb_tree.h"
-#include "../../include/s21_map.h"
 
 namespace s21rb = s21::rb_tree;
-using MapTree = s21::RbTree<int, std::pair<const int, std::string>, 
+using MapTree = s21::RbTree<int, std::pair<const int, std::string>,
                           s21::rb_tree::SelectFirst<std::pair<const int, std::string>>,
                           std::less<int>, std::allocator<std::pair<const int, std::string>>>;
 
+using Tree = s21::RbTree<int, int, s21rb::Identity<int>,
+                         std::less<int>, std::allocator<int>>;
 
 TEST(RbTreeTest, InsertHintEnd) {
   MapTree tree;
@@ -280,4 +281,97 @@ TEST(RbTreeTest, InsertHintBeforeNodeNoRightChild) {
   auto result = tree.InsertHintUnique(hint, 15);
 
   EXPECT_TRUE(result != tree.end());
+}
+
+TEST(RbTreeTest, EraseBlackWWithOneBlackChildren) {
+  Tree tree1;
+  Tree tree2;
+
+  tree1.InsertUnique(20);
+  tree1.InsertUnique(15);
+  tree1.InsertUnique(22);
+  tree1.InsertUnique(21);
+
+  tree2.InsertUnique(20);
+  tree2.InsertUnique(15);
+  tree2.InsertUnique(22);
+  tree2.InsertUnique(16);
+
+  auto it1 = tree1.Find(15);
+  auto it2 = tree2.Find(22);
+  ASSERT_NE(it1, tree1.end());
+  ASSERT_NE(it2, tree2.end());
+
+  tree1.Erase(it1);
+  tree2.Erase(it2);
+  EXPECT_EQ(tree1.Size(), 3);
+  EXPECT_EQ(tree2.Size(), 3);
+}
+
+TEST(RbTreeTest, EraseBlackWWithTwoBlackChildren) {
+  Tree tree1;
+  Tree tree2;
+
+  tree1.InsertUnique(20);
+  tree1.InsertUnique(15);
+  tree1.InsertUnique(22);
+  tree1.InsertUnique(16);
+
+  tree2.InsertUnique(20);
+  tree2.InsertUnique(15);
+  tree2.InsertUnique(22);
+  tree2.InsertUnique(21);
+
+  auto it1 = tree1.Find(15);
+  tree1.Erase(it1);
+  ASSERT_NE(it1, tree1.end());
+  it1 = tree1.Find(22);
+  tree1.Erase(it1);
+  ASSERT_NE(it1, tree1.end());
+  EXPECT_EQ(tree1.Size(), 2);
+
+  auto it2 = tree2.Find(15);
+  tree2.Erase(it2);
+  ASSERT_NE(it2, tree2.end());
+  it2 = tree2.Find(20);
+  tree2.Erase(it2);
+  ASSERT_NE(it2, tree2.end());
+  EXPECT_EQ(tree2.Size(), 2);
+}
+
+TEST(RbTreeTest, EraseRedW) {
+  Tree tree1;
+  Tree tree2;
+
+  tree1.InsertUnique(57);
+  tree1.InsertUnique(44);
+  tree1.InsertUnique(66);
+  tree1.InsertUnique(62);
+  tree1.InsertUnique(75);
+  tree1.InsertUnique(70);
+  tree1.InsertUnique(87);
+  tree1.InsertUnique(81);
+  tree1.InsertUnique(89);
+  tree1.InsertUnique(90);
+
+  tree2.InsertUnique(30);
+  tree2.InsertUnique(6);
+  tree2.InsertUnique(50);
+  tree2.InsertUnique(40);
+  tree2.InsertUnique(3);
+  tree2.InsertUnique(20);
+  tree2.InsertUnique(4);
+
+  auto it1 = tree1.Find(70);
+  tree1.Erase(it1);
+  ASSERT_NE(it1, tree1.end());
+  EXPECT_EQ(tree1.Size(), 9);
+
+  auto it2 = tree2.Find(50);
+  tree2.Erase(it2);
+  it2 = tree2.Find(40);
+  tree2.Erase(it2);
+
+  ASSERT_NE(it2, tree2.end());
+  EXPECT_EQ(tree2.Size(), 5);
 }
