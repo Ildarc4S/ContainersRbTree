@@ -42,7 +42,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: .src/docker/Dockerfile
+          file: ./src/docker/Dockerfile
           load: true
           tags: s21containers
           cache-from: type=local,src=/tmp/.buildx-cache
