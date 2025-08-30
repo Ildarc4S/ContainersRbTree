@@ -24,29 +24,18 @@ target_include_directories(s21_containers INTERFACE
 
 add_subdirectory(src/tests)
 
-if(COVERAGE)
-  find_program(LCOV lcov)
-  find_program(GENHTML genhtml)
+find_program(LCOV lcov)
+find_program(GENHTML genhtml)
 
-  if(LCOV AND GENHTML)
-    add_custom_target(coverage
-      COMMAND ${LCOV}
-        --capture --directory ${CMAKE_BINARY_DIR}
-        --output-file coverage.info
-        --ignore-errors inconsistent --rc geninfo_unexecuted_blocks=1
-      COMMAND ${LCOV}
-        --remove coverage.info '/usr/*' '${CMAKE_SOURCE_DIR}/src/tests/*'
-        --output-file coverage.filtered.info
-        --ignore-errors unused
-      COMMAND ${GENHTML}
-        coverage.filtered.info
-        --output-directory coverage
-        -c ${CMAKE_SOURCE_DIR}/gcov/gcov.css
-      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-      COMMENT "Generating code coverage report"
-    )
-  else()
-    message(WARNING "Coverage enabled but lcov or genhtml not found")
-  endif()
-endif()
-
+add_custom_target(coverage
+  COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+  COMMAND ${LCOV} --capture --directory ${CMAKE_BINARY_DIR} --output-file coverage.info --ignore-errors inconsistent --rc geninfo_unexecuted_blocks=1 --quiet 2>/dev/null
+  COMMAND ${LCOV} --remove coverage.info '/usr/*' '${CMAKE_SOURCE_DIR}/src/tests/*' --output-file coverage.filtered.info --ignore-errors inconsistent --quiet 2>/dev/null
+  COMMAND ${GENHTML}
+    coverage.filtered.info
+    --output-directory coverage
+    -c ${CMAKE_SOURCE_DIR}/gcov/gcov.css
+    --quiet
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  COMMENT "Generating code coverage report"
+)
