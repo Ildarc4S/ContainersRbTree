@@ -49,7 +49,7 @@ jobs:
 
       # Основная сборка и вычисление покрытия из Makefile (как и было)
       - name: Run build and coverage using Makefile
-        run: make build && make coverage
+        run: cd src && make build && make coverage
 
       - name: Upload coverage report as artifact
         uses: actions/upload-artifact@v4
@@ -65,5 +65,5 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/coverage
+          publish_dir: ./src/build/coverage
 
