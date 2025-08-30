@@ -9,8 +9,8 @@ foreach(TEST_SOURCE ${RB_TREE_TESTS})
   add_executable(${TEST_NAME} ${TEST_SOURCE})
 
   target_include_directories(${TEST_NAME} PRIVATE
-    ${CMAKE_SOURCE_DIR}/src/include
-    ${CMAKE_SOURCE_DIR}/src/include/rb_tree
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/rb_tree
     ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
