@@ -12,52 +12,48 @@ using PtrTraitsRebind_ = std::pointer_traits<Ptr_>::template rebind<T_>;
 template <typename Ptr_>
 using PtrTraitsElemType_ = std::pointer_traits<Ptr_>::element_type;
 
-template<typename ValueType, typename Iter_>
-concept SameValueType = std::same_as<ValueType,
-  typename std::iterator_traits<Iter_>::value_type>;
+template <typename ValueType, typename Iter_>
+concept SameValueType =
+    std::same_as<ValueType, typename std::iterator_traits<Iter_>::value_type>;
 
-template<typename Pair_>
+template <typename Pair_>
 struct SelectFirst {
   using pair_first = Pair_::first_type;
   pair_first& operator()(Pair_& pair) const noexcept;
   const pair_first& operator()(const Pair_& pair) const noexcept;
 };
 
-template<typename T_>
+template <typename T_>
 struct Identity {
   using type = T_;
   type& operator()(type& value) const noexcept;
   const type& operator()(const type& value) const noexcept;
 };
 
-template<typename Pair_>
-SelectFirst<Pair_>::pair_first&
-SelectFirst<Pair_>::operator()(Pair_& pair) const noexcept {
+template <typename Pair_>
+SelectFirst<Pair_>::pair_first& SelectFirst<Pair_>::operator()(
+    Pair_& pair) const noexcept {
   return pair.first;
 }
 
-template<typename Pair_>
-const SelectFirst<Pair_>::pair_first&
-SelectFirst<Pair_>::operator()(const Pair_& pair) const noexcept {
+template <typename Pair_>
+const SelectFirst<Pair_>::pair_first& SelectFirst<Pair_>::operator()(
+    const Pair_& pair) const noexcept {
   return pair.first;
 }
 
-template<typename T_>
-Identity<T_>::type&
-Identity<T_>::operator()(type& value) const noexcept {
+template <typename T_>
+Identity<T_>::type& Identity<T_>::operator()(type& value) const noexcept {
   return value;
 }
 
-template<typename T_>
-const Identity<T_>::type&
-Identity<T_>::operator()(const type& value) const noexcept {
+template <typename T_>
+const Identity<T_>::type& Identity<T_>::operator()(
+    const type& value) const noexcept {
   return value;
 }
 
-enum class NodeColor : std::uint8_t {
-  kBlack,
-  kRed
-};
+enum class NodeColor : std::uint8_t { kBlack, kRed };
 
 template <typename Ptr_>
 struct NodeBase {
@@ -91,7 +87,6 @@ struct Header {
 
 template <typename ValPtr_>
 struct Node : public NodeBase<PtrTraitsRebind_<ValPtr_, void>> {
-
   using ValueType_ = PtrTraitsElemType_<ValPtr_>;
   using NodePtr_ = PtrTraitsRebind_<ValPtr_, Node>;
 
@@ -106,13 +101,12 @@ struct Node : public NodeBase<PtrTraitsRebind_<ValPtr_, void>> {
   } storage_;
 
   ValueType_* GetValPtr();
-  ValueType_ const*  GetValPtr() const;
+  ValueType_ const* GetValPtr() const;
   NodePtr_ GetNodePtr() noexcept;
 };
 
 template <bool IsConst_, typename ValPtr_>
 struct Iterator {
-
   template <typename T>
   using MaybeConst_ = std::conditional_t<IsConst_, const T, T>;
 
@@ -131,7 +125,8 @@ struct Iterator {
   Iterator(const Iterator&) = default;
 
   constexpr explicit Iterator(BasePtr_ node) noexcept;
-  constexpr Iterator(const Iterator<false, ValPtr_>& it) requires IsConst_;
+  constexpr Iterator(const Iterator<false, ValPtr_>& it)
+    requires IsConst_;
 
   [[nodiscard]] reference operator*() const noexcept;
   [[nodiscard]] pointer operator->() const noexcept;
@@ -144,10 +139,10 @@ struct Iterator {
 
   template <bool B, typename T>
   friend bool operator==(const Iterator<B, T>& first,
-                                       const Iterator<B, T>& second);
+                         const Iterator<B, T>& second);
   template <bool B, typename T>
   friend bool operator!=(const Iterator<B, T>& first,
-                                       const Iterator<B, T>& second);
+                         const Iterator<B, T>& second);
 
   BasePtr_ node_;
 };
@@ -170,8 +165,8 @@ struct NodeTraits {
 //////////////
 
 template <typename Ptr_>
-typename NodeBase<Ptr_>::BasePtr_
-NodeBase<Ptr_>::Minimum(BasePtr_ node) noexcept {
+typename NodeBase<Ptr_>::BasePtr_ NodeBase<Ptr_>::Minimum(
+    BasePtr_ node) noexcept {
   if (!node) {
     return nullptr;
   }
@@ -183,8 +178,8 @@ NodeBase<Ptr_>::Minimum(BasePtr_ node) noexcept {
 }
 
 template <typename Ptr_>
-typename NodeBase<Ptr_>::BasePtr_
-NodeBase<Ptr_>::Maximum(BasePtr_ node) noexcept {
+typename NodeBase<Ptr_>::BasePtr_ NodeBase<Ptr_>::Maximum(
+    BasePtr_ node) noexcept {
   if (!node) {
     return nullptr;
   }
@@ -196,10 +191,9 @@ NodeBase<Ptr_>::Maximum(BasePtr_ node) noexcept {
 }
 
 template <typename Ptr_>
-NodeBase<Ptr_>::BasePtr_
-NodeBase<Ptr_>::GetBasePtr() const noexcept {
-	return std::pointer_traits<BasePtr_>::
-         pointer_to(*const_cast<NodeBase*>(this));
+NodeBase<Ptr_>::BasePtr_ NodeBase<Ptr_>::GetBasePtr() const noexcept {
+  return std::pointer_traits<BasePtr_>::pointer_to(
+      *const_cast<NodeBase*>(this));
 }
 
 //////////
@@ -225,13 +219,13 @@ Node<ValPtr_>::NodePtr_ Node<ValPtr_>::GetNodePtr() noexcept {
 // Header //
 ////////////
 
-template<typename NodeBase_>
+template <typename NodeBase_>
 Header<NodeBase_>::Header() noexcept {
   header_.color_ = NodeColor::kRed;
   Reset();
 }
 
-template<typename NodeBase_>
+template <typename NodeBase_>
 Header<NodeBase_>::Header(Header&& other) noexcept {
   header_.color_ = NodeColor::kRed;
   Reset();
@@ -241,7 +235,7 @@ Header<NodeBase_>::Header(Header&& other) noexcept {
   }
 }
 
-template<typename NodeBase_>
+template <typename NodeBase_>
 void Header<NodeBase_>::SwapData(Header& other) noexcept {
   std::swap(header_.parent_, other.header_.parent_);
   std::swap(header_.left_, other.header_.left_);
@@ -257,11 +251,11 @@ void Header<NodeBase_>::SwapData(Header& other) noexcept {
   }
 }
 
-template<typename NodeBase_>
+template <typename NodeBase_>
 void Header<NodeBase_>::Reset() noexcept {
   header_.parent_ = nullptr;
-	header_.left_ = header_.right_ = header_.GetBasePtr();
-	node_count_ = 0;
+  header_.left_ = header_.right_ = header_.GetBasePtr();
+  node_count_ = 0;
 }
 
 //////////////
@@ -270,38 +264,35 @@ void Header<NodeBase_>::Reset() noexcept {
 
 template <bool IsConst_, typename ValPtr_>
 constexpr Iterator<IsConst_, ValPtr_>::Iterator(BasePtr_ node) noexcept
-: node_(node) {
-}
+    : node_(node) {}
 
-template<bool IsConst_, typename ValPtr_>
-constexpr Iterator<IsConst_, ValPtr_>::Iterator(const Iterator<false, ValPtr_>& it) requires (IsConst_)
-: node_(it.node_) {
-}
-
+template <bool IsConst_, typename ValPtr_>
+constexpr Iterator<IsConst_, ValPtr_>::Iterator(
+    const Iterator<false, ValPtr_>& it)
+  requires(IsConst_)
+    : node_(it.node_) {}
 
 template <bool IsConst_, typename ValPtr_>
 [[nodiscard]]
-Iterator<IsConst_, ValPtr_>::reference
-Iterator<IsConst_, ValPtr_>::operator*() const noexcept {
+Iterator<IsConst_, ValPtr_>::reference Iterator<IsConst_, ValPtr_>::operator*()
+    const noexcept {
   return *static_cast<Node_&>(*node_).GetValPtr();
 }
 
 template <bool IsConst_, typename ValPtr_>
 [[nodiscard]]
-Iterator<IsConst_, ValPtr_>::pointer
-Iterator<IsConst_, ValPtr_>::operator->() const noexcept {
+Iterator<IsConst_, ValPtr_>::pointer Iterator<IsConst_, ValPtr_>::operator->()
+    const noexcept {
   return static_cast<Node_&>(*node_).GetValPtr();
 }
 
 template <bool B, typename T>
-bool operator==(const Iterator<B, T>& first,
-                const Iterator<B, T>& second) {
+bool operator==(const Iterator<B, T>& first, const Iterator<B, T>& second) {
   return first.node_ == second.node_;
 }
 
 template <bool B, typename T>
-bool operator!=(const Iterator<B, T>& first,
-                const Iterator<B, T>& second) {
+bool operator!=(const Iterator<B, T>& first, const Iterator<B, T>& second) {
   return !(first == second);
 }
 
@@ -328,8 +319,7 @@ Iterator<IsConst_, ValPtr_>::operator++() noexcept {
 template <bool IsConst_, typename ValPtr_>
 constexpr Iterator<IsConst_, ValPtr_>&
 Iterator<IsConst_, ValPtr_>::operator--() noexcept {
-  if (node_->parent_->parent_ == node_
-      && node_->color_ == NodeColor::kRed) {
+  if (node_->parent_->parent_ == node_ && node_->color_ == NodeColor::kRed) {
     node_ = node_->right_;
   } else if (node_->left_) {
     node_ = NodeBase_::Maximum(node_->left_);
@@ -345,25 +335,24 @@ Iterator<IsConst_, ValPtr_>::operator--() noexcept {
   return *this;
 }
 
-template<bool IsConst_, typename ValPtr_>
-constexpr Iterator<IsConst_, ValPtr_>
-Iterator<IsConst_, ValPtr_>::operator++(int) noexcept {
+template <bool IsConst_, typename ValPtr_>
+constexpr Iterator<IsConst_, ValPtr_> Iterator<IsConst_, ValPtr_>::operator++(
+    int) noexcept {
   Iterator it(this->node_);
   ++*this;
   return it;
 }
 
-template<bool IsConst_, typename ValPtr_>
-constexpr Iterator<IsConst_, ValPtr_>
-Iterator<IsConst_, ValPtr_>::operator--(int) noexcept {
+template <bool IsConst_, typename ValPtr_>
+constexpr Iterator<IsConst_, ValPtr_> Iterator<IsConst_, ValPtr_>::operator--(
+    int) noexcept {
   Iterator it(this->node_);
   --*this;
   return it;
 }
 
 template <typename Iter_>
-std::iterator_traits<Iter_>::difference_type
-distance(Iter_ first, Iter_ last) {
+std::iterator_traits<Iter_>::difference_type distance(Iter_ first, Iter_ last) {
   typename std::iterator_traits<Iter_>::difference_type count = 0;
   while (first != last) {
     ++count;
@@ -372,7 +361,7 @@ distance(Iter_ first, Iter_ last) {
   return count;
 }
 
-} //  rb_tree
-} //  s21
+}  // namespace rb_tree
+}  // namespace s21
 
-#endif //  _S21_RB_TREE_UTILS_
+#endif  //  _S21_RB_TREE_UTILS_

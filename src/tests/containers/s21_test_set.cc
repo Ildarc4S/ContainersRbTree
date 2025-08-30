@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+
 #include "../../include/s21_set.h"
 
 TEST(SetTest, DefaultConstructor) {
@@ -94,9 +95,7 @@ TEST(SetTest, MoveAssignment) {
 
 TEST(SetTest, CustomComparatorConstructor) {
   struct AbsCompare {
-    bool operator()(int a, int b) const {
-      return std::abs(a) < std::abs(b);
-    }
+    bool operator()(int a, int b) const { return std::abs(a) < std::abs(b); }
   };
 
   s21::Set<int, AbsCompare> set{-5, 3, 5};
@@ -114,7 +113,8 @@ TEST(SetTest, StringCustomComparator) {
     }
   };
 
-  s21::Set<std::string, CaseInsensitiveCompare> set{"Apple", "banana", "CHERRY"};
+  s21::Set<std::string, CaseInsensitiveCompare> set{"Apple", "banana",
+                                                    "CHERRY"};
   EXPECT_EQ(set.Size(), 3);
   EXPECT_TRUE(set.Contains("Apple"));
   EXPECT_TRUE(set.Contains("banana"));
@@ -253,14 +253,18 @@ TEST(SetTest, IterationOrder) {
   s21::Set<int> set{3, 1, 2};
   auto it = set.Begin();
   EXPECT_EQ(*it, 1);
-  ++it; EXPECT_EQ(*it, 2);
-  ++it; EXPECT_EQ(*it, 3);
+  ++it;
+  EXPECT_EQ(*it, 2);
+  ++it;
+  EXPECT_EQ(*it, 3);
 
   s21::Set<int, std::greater<int>> set_greater{3, 1, 2};
   auto it2 = set_greater.Begin();
   EXPECT_EQ(*it2, 3);
-  ++it2; EXPECT_EQ(*it2, 2);
-  ++it2; EXPECT_EQ(*it2, 1);
+  ++it2;
+  EXPECT_EQ(*it2, 2);
+  ++it2;
+  EXPECT_EQ(*it2, 1);
 }
 
 TEST(SetTest, Clear) {

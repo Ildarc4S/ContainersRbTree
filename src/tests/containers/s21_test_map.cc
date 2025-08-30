@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+
 #include "../../include/s21_map.h"
 
 TEST(MapTest, DefaultConstructor) {
@@ -14,20 +15,13 @@ TEST(MapTest, DefaultConstructor) {
 }
 
 TEST(MapTest, InitializerListConstructor) {
-  s21::Map<int, std::string> map{
-    {1, "one"},
-    {2, "two"},
-    {3, "three"}
-  };
+  s21::Map<int, std::string> map{{1, "one"}, {2, "two"}, {3, "three"}};
   EXPECT_EQ(map.Size(), 3);
   EXPECT_EQ(map.At(1), "one");
   EXPECT_EQ(map[2], "two");
 
   s21::Map<int, std::string, std::greater<int>> map_greater{
-    {1, "one"},
-    {2, "two"},
-    {3, "three"}
-  };
+      {1, "one"}, {2, "two"}, {3, "three"}};
   EXPECT_EQ(map_greater.Size(), 3);
   EXPECT_EQ(map_greater.At(3), "three");
   EXPECT_EQ(map_greater[1], "one");
@@ -84,7 +78,8 @@ TEST(MapTest, MoveAssignment) {
   EXPECT_EQ(map2.Size(), 2);
   EXPECT_TRUE(map1.Empty());
 
-  s21::Map<int, std::string, std::greater<int>> map3{{7, "seven"}, {3, "three"}};
+  s21::Map<int, std::string, std::greater<int>> map3{{7, "seven"},
+                                                     {3, "three"}};
   s21::Map<int, std::string, std::greater<int>> map4;
   map4 = std::move(map3);
   EXPECT_EQ(map4.Size(), 2);
@@ -97,16 +92,11 @@ TEST(MapTest, MoveAssignment) {
 
 TEST(MapTest, CustomComparatorConstructor) {
   struct AbsCompare {
-    bool operator()(int a, int b) const {
-      return std::abs(a) < std::abs(b);
-    }
+    bool operator()(int a, int b) const { return std::abs(a) < std::abs(b); }
   };
 
   s21::Map<int, std::string, AbsCompare> map{
-    {-5, "minus five"},
-    {3, "three"},
-    {5, "five"}
-  };
+      {-5, "minus five"}, {3, "three"}, {5, "five"}};
 
   EXPECT_EQ(map.Size(), 2);
   EXPECT_TRUE(map.Contains(5));
@@ -121,10 +111,7 @@ TEST(MapTest, StringCustomComparator) {
   };
 
   s21::Map<std::string, int, CaseInsensitiveCompare> map{
-    {"Apple", 1},
-    {"banana", 2},
-    {"CHERRY", 3}
-  };
+      {"Apple", 1}, {"banana", 2}, {"CHERRY", 3}};
 
   EXPECT_EQ(map.Size(), 3);
   EXPECT_EQ(map["Apple"], 1);
@@ -138,7 +125,8 @@ TEST(MapTest, AtMethods) {
   EXPECT_EQ(map.At(2), "two");
   EXPECT_THROW(map.At(999), std::out_of_range);
 
-  s21::Map<int, std::string, std::greater<int>> map_greater{{3, "three"}, {1, "one"}};
+  s21::Map<int, std::string, std::greater<int>> map_greater{{3, "three"},
+                                                            {1, "one"}};
   EXPECT_EQ(map_greater.At(3), "three");
   EXPECT_EQ(map_greater.At(1), "one");
   EXPECT_THROW(map_greater.At(999), std::out_of_range);
@@ -217,7 +205,8 @@ TEST(MapTest, Erase) {
   }
   EXPECT_FALSE(found);
 
-  s21::Map<int, std::string, std::greater<int>> map_greater{{5, "five"}, {3, "three"}};
+  s21::Map<int, std::string, std::greater<int>> map_greater{{5, "five"},
+                                                            {3, "three"}};
   size_t initial_size_greater = map_greater.Size();
 
   auto it3 = map_greater.Begin();
@@ -229,7 +218,8 @@ TEST(MapTest, Erase) {
   EXPECT_EQ(map_greater.Size(), initial_size_greater - 1);
 
   bool found_greater = false;
-  for (auto it4 = map_greater.Begin(); it4 != map_greater.End() && !found_greater; ++it4) {
+  for (auto it4 = map_greater.Begin();
+       it4 != map_greater.End() && !found_greater; ++it4) {
     if (it4->first == 5) {
       found_greater = true;
     }
@@ -290,14 +280,19 @@ TEST(MapTest, IterationOrder) {
   s21::Map<int, std::string> map{{3, "three"}, {1, "one"}, {2, "two"}};
   auto it = map.Begin();
   EXPECT_EQ(it->first, 1);
-  ++it; EXPECT_EQ(it->first, 2);
-  ++it; EXPECT_EQ(it->first, 3);
+  ++it;
+  EXPECT_EQ(it->first, 2);
+  ++it;
+  EXPECT_EQ(it->first, 3);
 
-  s21::Map<int, std::string, std::greater<int>> map_greater{{3, "three"}, {1, "one"}, {2, "two"}};
+  s21::Map<int, std::string, std::greater<int>> map_greater{
+      {3, "three"}, {1, "one"}, {2, "two"}};
   auto it2 = map_greater.Begin();
   EXPECT_EQ(it2->first, 3);
-  ++it2; EXPECT_EQ(it2->first, 2);
-  ++it2; EXPECT_EQ(it2->first, 1);
+  ++it2;
+  EXPECT_EQ(it2->first, 2);
+  ++it2;
+  EXPECT_EQ(it2->first, 1);
 }
 
 TEST(MapTest, Clear) {
@@ -432,10 +427,7 @@ TEST(MapIteratorTest, EndIterator) {
 }
 
 TEST(MapIteratorTest, ConstIterator) {
-  const s21::Map<int, std::string> map = {
-    {1, "one"},
-    {2, "two"}
-  };
+  const s21::Map<int, std::string> map = {{1, "one"}, {2, "two"}};
 
   auto const_it = map.Begin();
   EXPECT_EQ(const_it->first, 1);

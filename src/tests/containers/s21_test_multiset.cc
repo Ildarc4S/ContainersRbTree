@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+
 #include "../../include/s21_multiset.h"
 
 TEST(MultisetTest, DefaultConstructor) {

@@ -1,9 +1,10 @@
 #include <gtest/gtest.h>
+
 #include <memory>
 
 #include "s21_rb_tree_utils.h"
 
-#define EXPECT_TYPE_SAME(T1, T2) \
+#define EXPECT_TYPE_SAME(T1, T2)                                     \
   static_assert(std::is_same_v<T1, T2>, "Types should be the same"); \
   ASSERT_TRUE((std::is_same_v<T1, T2>))
 
@@ -12,26 +13,28 @@ namespace s21rb = s21::rb_tree;
 template <typename Ptr>
 class UniversalPtrTest : public ::testing::Test {};
 
-using AllPtrTypes = ::testing::Types<
-  int*, const int*, double*,
-  std::unique_ptr<int>, std::shared_ptr<int>,
-  std::unique_ptr<double>, std::shared_ptr<double>
->;
+using AllPtrTypes =
+    ::testing::Types<int*, const int*, double*, std::unique_ptr<int>,
+                     std::shared_ptr<int>, std::unique_ptr<double>,
+                     std::shared_ptr<double>>;
 
 TYPED_TEST_SUITE(UniversalPtrTest, AllPtrTypes);
 
 TYPED_TEST(UniversalPtrTest, NodeBaseBasePtrRebindConsistency) {
-    using NodeBaseType = s21rb::NodeBase<TypeParam>;
-    using ExpectedRebind = typename std::pointer_traits<TypeParam>::template rebind<NodeBaseType>;
-    EXPECT_TYPE_SAME(typename NodeBaseType::BasePtr_, ExpectedRebind);
+  using NodeBaseType = s21rb::NodeBase<TypeParam>;
+  using ExpectedRebind =
+      typename std::pointer_traits<TypeParam>::template rebind<NodeBaseType>;
+  EXPECT_TYPE_SAME(typename NodeBaseType::BasePtr_, ExpectedRebind);
 }
 
 TYPED_TEST(UniversalPtrTest, NodeValueTypeAndNodePtrConsistency) {
-    using NodeT = s21rb::Node<TypeParam>;
-    using ExpectedValueType = typename std::pointer_traits<TypeParam>::element_type;
-    using ExpectedNodePtr = typename std::pointer_traits<TypeParam>::template rebind<NodeT>;
-    EXPECT_TYPE_SAME(typename NodeT::ValueType_, ExpectedValueType);
-    EXPECT_TYPE_SAME(typename NodeT::NodePtr_, ExpectedNodePtr);
+  using NodeT = s21rb::Node<TypeParam>;
+  using ExpectedValueType =
+      typename std::pointer_traits<TypeParam>::element_type;
+  using ExpectedNodePtr =
+      typename std::pointer_traits<TypeParam>::template rebind<NodeT>;
+  EXPECT_TYPE_SAME(typename NodeT::ValueType_, ExpectedValueType);
+  EXPECT_TYPE_SAME(typename NodeT::NodePtr_, ExpectedNodePtr);
 }
 
 TYPED_TEST(UniversalPtrTest, IteratorInternalTypesNonConst) {
@@ -39,8 +42,10 @@ TYPED_TEST(UniversalPtrTest, IteratorInternalTypesNonConst) {
   using Iter = s21rb::Iterator<false, ValPtr>;
 
   using ExpectedNode = s21rb::Node<ValPtr>;
-  using ExpectedNodeBase = s21rb::NodeBase<typename std::pointer_traits<ValPtr>::template rebind<void>>;
-  using ExpectedBasePtr = typename std::pointer_traits<ValPtr>::template rebind<ExpectedNodeBase>;
+  using ExpectedNodeBase = s21rb::NodeBase<
+      typename std::pointer_traits<ValPtr>::template rebind<void>>;
+  using ExpectedBasePtr =
+      typename std::pointer_traits<ValPtr>::template rebind<ExpectedNodeBase>;
   using ExpectedValueType = typename std::pointer_traits<ValPtr>::element_type;
   using ExpectedReference = ExpectedValueType&;
   using ExpectedPointer = ExpectedValueType*;
@@ -51,7 +56,8 @@ TYPED_TEST(UniversalPtrTest, IteratorInternalTypesNonConst) {
   EXPECT_TYPE_SAME(typename Iter::value_type, ExpectedValueType);
   EXPECT_TYPE_SAME(typename Iter::reference, ExpectedReference);
   EXPECT_TYPE_SAME(typename Iter::pointer, ExpectedPointer);
-  EXPECT_TYPE_SAME(typename Iter::iterator_category, std::bidirectional_iterator_tag);
+  EXPECT_TYPE_SAME(typename Iter::iterator_category,
+                   std::bidirectional_iterator_tag);
   EXPECT_TYPE_SAME(typename Iter::difference_type, std::ptrdiff_t);
 }
 
@@ -60,8 +66,10 @@ TYPED_TEST(UniversalPtrTest, IteratorInternalTypesConst) {
   using Iter = s21rb::Iterator<true, ValPtr>;
 
   using ExpectedNode = s21rb::Node<ValPtr>;
-  using ExpectedNodeBase = s21rb::NodeBase<typename std::pointer_traits<ValPtr>::template rebind<void>>;
-  using ExpectedBasePtr = typename std::pointer_traits<ValPtr>::template rebind<ExpectedNodeBase>;
+  using ExpectedNodeBase = s21rb::NodeBase<
+      typename std::pointer_traits<ValPtr>::template rebind<void>>;
+  using ExpectedBasePtr =
+      typename std::pointer_traits<ValPtr>::template rebind<ExpectedNodeBase>;
   using ExpectedValueType = typename std::pointer_traits<ValPtr>::element_type;
   using ExpectedReference = const ExpectedValueType&;
   using ExpectedPointer = const ExpectedValueType*;
@@ -72,7 +80,8 @@ TYPED_TEST(UniversalPtrTest, IteratorInternalTypesConst) {
   EXPECT_TYPE_SAME(typename Iter::value_type, ExpectedValueType);
   EXPECT_TYPE_SAME(typename Iter::reference, ExpectedReference);
   EXPECT_TYPE_SAME(typename Iter::pointer, ExpectedPointer);
-  EXPECT_TYPE_SAME(typename Iter::iterator_category, std::bidirectional_iterator_tag);
+  EXPECT_TYPE_SAME(typename Iter::iterator_category,
+                   std::bidirectional_iterator_tag);
   EXPECT_TYPE_SAME(typename Iter::difference_type, std::ptrdiff_t);
 }
 

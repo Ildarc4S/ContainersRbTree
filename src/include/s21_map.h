@@ -8,34 +8,33 @@
 
 namespace s21 {
 
-template <typename Key_, typename T_,
-          typename Compare_ =  std::less<Key_>,
-          typename Alloc_ = std::allocator<
-                              std::pair<const Key_, T_>>>
+template <typename Key_, typename T_, typename Compare_ = std::less<Key_>,
+          typename Alloc_ = std::allocator<std::pair<const Key_, T_>>>
 class Map {
-public:
+ public:
   using key_type = Key_;
   using map_type = T_;
   using key_compare = Compare_;
   using allocator_type = Alloc_;
   using value_type = std::pair<const Key_, T_>;
 
-private:
-  using PairAlloc_ = std::allocator_traits<allocator_type>::template rebind_alloc<value_type>;
+ private:
+  using PairAlloc_ =
+      std::allocator_traits<allocator_type>::template rebind_alloc<value_type>;
   using RbTree_ = RbTree<key_type, value_type, rb_tree::SelectFirst<value_type>,
                          key_compare, PairAlloc_>;
 
   using AllocTraits_ = std::allocator_traits<PairAlloc_>;
 
-  template<typename OtherCompare_>
-	using OtherMap_ = Map<Key_, T_, OtherCompare_, Alloc_>;
+  template <typename OtherCompare_>
+  using OtherMap_ = Map<Key_, T_, OtherCompare_, Alloc_>;
 
-  template<typename, typename>
-	friend struct RbTreeMergeHelper;
+  template <typename, typename>
+  friend struct RbTreeMergeHelper;
 
   RbTree_ rb_tree_;
 
-public:
+ public:
   using reference = value_type&;
   using const_reference = const value_type&;
 
@@ -49,7 +48,7 @@ public:
   Map(Map&&) = default;
   ~Map() = default;
 
-  Map(std::initializer_list<value_type> const &items,
+  Map(std::initializer_list<value_type> const& items,
       const key_compare& compare = key_compare(),
       const allocator_type& alloc = allocator_type());
 
@@ -72,41 +71,40 @@ public:
   void Clear();
   std::pair<iterator, bool> Insert(const value_type& pair);
   std::pair<iterator, bool> Insert(const key_type& key, const map_type& value);
-  std::pair<iterator, bool> InsertOrAssign(const key_type& key, const map_type& value);
+  std::pair<iterator, bool> InsertOrAssign(const key_type& key,
+                                           const map_type& value);
 
   void Erase(iterator pos);
   void Swap(Map& other);
 
-  template<typename OtherCompare_>
+  template <typename OtherCompare_>
   void Merge(OtherMap_<OtherCompare_>& other);
 
   bool Contains(const key_type& key) const;
 };
 
-template<typename Key_, typename Val_, typename Compare_,
-         typename Alloc_, typename OtherCompare_>
+template <typename Key_, typename Val_, typename Compare_, typename Alloc_,
+          typename OtherCompare_>
 struct RbTreeMergeHelper<Map<Key_, Val_, Compare_, Alloc_>, OtherCompare_> {
-private:
+ private:
   friend class Map<Key_, Val_, Compare_, Alloc_>;
 
-  static auto&
-  GetRbTree(Map<Key_, Val_, OtherCompare_, Alloc_>& other_map) {
+  static auto& GetRbTree(Map<Key_, Val_, OtherCompare_, Alloc_>& other_map) {
     return other_map.rb_tree_;
   }
 };
 
 template <typename Key_, typename T_, typename Compare_, typename Alloc_>
-Map<Key_, T_, Compare_, Alloc_>::
-Map(std::initializer_list<value_type> const &items,
-    const key_compare& compare,
+Map<Key_, T_, Compare_, Alloc_>::Map(
+    std::initializer_list<value_type> const& items, const key_compare& compare,
     const allocator_type& alloc)
-: rb_tree_(compare, alloc) {
+    : rb_tree_(compare, alloc) {
   rb_tree_.InsertRangeUnique(items.begin(), items.end());
 }
 
 template <typename Key_, typename T_, typename Compare_, typename Alloc_>
-Map<Key_, T_, Compare_, Alloc_>::map_type&
-Map<Key_, T_, Compare_, Alloc_>::At(const key_type& key) {
+Map<Key_, T_, Compare_, Alloc_>::map_type& Map<Key_, T_, Compare_, Alloc_>::At(
+    const key_type& key) {
   auto it = rb_tree_.LowerBound(key);
   if (it == rb_tree_.end() || key_compare()(key, it->first)) {
     throw std::out_of_range("Map::at: key not found");
@@ -149,8 +147,7 @@ Map<Key_, T_, Compare_, Alloc_>::End() const noexcept {
 }
 
 template <typename Key_, typename T_, typename Compare_, typename Alloc_>
-bool
-Map<Key_, T_, Compare_, Alloc_>::Empty() const noexcept {
+bool Map<Key_, T_, Compare_, Alloc_>::Empty() const noexcept {
   return rb_tree_.Empty();
 }
 
@@ -160,7 +157,6 @@ Map<Key_, T_, Compare_, Alloc_>::Size() const noexcept {
   return rb_tree_.Size();
 }
 
-
 template <typename Key_, typename T_, typename Compare_, typename Alloc_>
 Map<Key_, T_, Compare_, Alloc_>::size_type
 Map<Key_, T_, Compare_, Alloc_>::MaxSize() const noexcept {
@@ -168,8 +164,7 @@ Map<Key_, T_, Compare_, Alloc_>::MaxSize() const noexcept {
 }
 
 template <typename Key_, typename T_, typename Compare_, typename Alloc_>
-void
-Map<Key_, T_, Compare_, Alloc_>::Clear() {
+void Map<Key_, T_, Compare_, Alloc_>::Clear() {
   rb_tree_.Clear();
 }
 
@@ -181,13 +176,15 @@ Map<Key_, T_, Compare_, Alloc_>::Insert(const value_type& pair) {
 
 template <typename Key_, typename T_, typename Compare_, typename Alloc_>
 std::pair<typename Map<Key_, T_, Compare_, Alloc_>::iterator, bool>
-Map<Key_, T_, Compare_, Alloc_>::Insert(const key_type& key, const map_type& value) {
+Map<Key_, T_, Compare_, Alloc_>::Insert(const key_type& key,
+                                        const map_type& value) {
   return rb_tree_.InsertUnique(std::make_pair(key, value));
 }
 
 template <typename Key_, typename T_, typename Compare_, typename Alloc_>
 std::pair<typename Map<Key_, T_, Compare_, Alloc_>::iterator, bool>
-Map<Key_, T_, Compare_, Alloc_>::InsertOrAssign(const key_type& key, const map_type& value) {
+Map<Key_, T_, Compare_, Alloc_>::InsertOrAssign(const key_type& key,
+                                                const map_type& value) {
   auto it = rb_tree_.LowerBound(key);
   bool inserted = false;
 
@@ -203,29 +200,25 @@ Map<Key_, T_, Compare_, Alloc_>::InsertOrAssign(const key_type& key, const map_t
 }
 
 template <typename Key_, typename T_, typename Compare_, typename Alloc_>
-void
-Map<Key_, T_, Compare_, Alloc_>::Erase(iterator position) {
+void Map<Key_, T_, Compare_, Alloc_>::Erase(iterator position) {
   rb_tree_.Erase(position);
 }
 
 template <typename Key_, typename T_, typename Compare_, typename Alloc_>
-void
-Map<Key_, T_, Compare_, Alloc_>::Swap(Map& other) {
+void Map<Key_, T_, Compare_, Alloc_>::Swap(Map& other) {
   rb_tree_.Swap(other.rb_tree_);
 }
 
 template <typename Key_, typename T_, typename Compare_, typename Alloc_>
-template<typename OtherCompare_>
-void
-Map<Key_, T_, Compare_, Alloc_>::Merge(OtherMap_<OtherCompare_>& other) {
+template <typename OtherCompare_>
+void Map<Key_, T_, Compare_, Alloc_>::Merge(OtherMap_<OtherCompare_>& other) {
   rb_tree_.MergeUnique(RbTreeMergeHelper<Map, OtherCompare_>::GetRbTree(other));
 }
 
 template <typename Key_, typename T_, typename Compare_, typename Alloc_>
-bool
-Map<Key_, T_, Compare_, Alloc_>::Contains(const key_type& key) const {
+bool Map<Key_, T_, Compare_, Alloc_>::Contains(const key_type& key) const {
   return rb_tree_.Find(key) != rb_tree_.end();
 }
 
-} //  namespace s21
-#endif //  _S21_MAP_H_
+}  //  namespace s21
+#endif  //  _S21_MAP_H_
