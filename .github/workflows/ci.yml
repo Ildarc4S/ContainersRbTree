@@ -1,9 +1,10 @@
-name: Cleanup deployments and build coverage
+name: Cleanup deployments, build coverage and auto-merge
 
 on:
   push:
     branches:
-      - '*'
+      - 'develop'
+      - 'rb_tree'
   pull_request:
     branches:
       - '*'
@@ -20,12 +21,16 @@ jobs:
           environment: github-pages
           onlyRemoveDeployments: true
 
-  build:
-      runs-on: ubuntu-latest
+  test:
+    runs-on: ubuntu-latest
+    outputs:
+      success: ${{ steps.test_status.outputs.success }}
 
-      steps:
+    steps:
       - name: Checkout sources
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Cache Docker layers
         uses: actions/cache@v4
@@ -47,18 +52,22 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
 
-      # Основная сборка и вычисление покрытия из Makefile (как и было)
-      - name: Run build and coverage using Makefile
-        run: cd src && make build && make coverage
+      - name: Run build and tests
+        id: run_tests
+        run: |
+          cd src
+          make build
+          make test
+          echo "Tests completed successfully"
+
+      - name: Run coverage
+        run: cd src && make coverage
 
       - name: Upload coverage report as artifact
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: src/build/coverage
-
-      - name: List coverage directory
-        run: ls -la src/build/coverage
 
       - name: Deploy coverage report to GitHub Pages
         if: github.ref == 'refs/heads/rb_tree' || github.ref == 'refs/heads/develop'
@@ -67,3 +76,50 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./src/build/coverage
 
+      - name: Set test status
+        id: test_status
+        run: echo "success=true" >> $GITHUB_OUTPUT
+
+  create-and-merge-pr:
+    runs-on: ubuntu-latest
+    needs: test
+    if: needs.test.result == 'success' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/rb_tree')
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Create Pull Request
+        id: create-pr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          title: "✅ Auto-merge: ${{ github.ref_name }} → main"
+          body: |
+            ## Автоматический Pull Request
+            
+            ✅ **Все тесты успешно пройдены!**
+            
+            **Детали:**
+            - Ветка источника: `${{ github.ref_name }}`
+            - Ветка назначения: `main`
+            - Commit: ${{ github.sha }}
+            - Coverage report: доступен в артефактах workflow
+            
+            Этот PR будет автоматически смержен после проверки.
+          base: main
+          head: ${{ github.ref_name }}
+          labels: auto-merge,automated-pr,ci-approved
+          assignees: ${{ github.actor }}
+          draft: false
+
+      - name: Auto-merge PR
+        if: steps.create-pr.outputs.pull-request-number != ''
+        uses: peter-evans/enable-pull-request-automerge@v2
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          pull-request-number: ${{ steps.create-pr.outputs.pull-request-number }}
+          merge-method: merge
