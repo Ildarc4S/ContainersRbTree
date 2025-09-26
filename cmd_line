@@ -1,1 +1,0 @@
-genhtml coverage.filtered.info --output-directory coverage -c /project/gcov/gcov.css --quiet
