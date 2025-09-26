@@ -111,7 +111,7 @@ jobs:
             
             Этот PR будет автоматически смержен после проверки.
           base: main
-          head: ${{ github.ref_name }}
+          branch: ${{ github.ref_name }}
           labels: auto-merge,automated-pr,ci-approved
           assignees: ${{ github.actor }}
           draft: false
