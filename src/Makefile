@@ -11,11 +11,11 @@ build:
 
 .PHONY: test
 test:
-	docker run --rm -it -v $(PWD):/project -w /project/build $(IMAGE_NAME) ctest --output-on-failure
+	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) ctest --output-on-failure
 
 .PHONY: test-%
 test-%:
-	docker run --rm -it -v $(PWD):/project -w /project/build $(IMAGE_NAME) ctest -R ^$*$$ --output-on-failure
+	docker run --rm -v $(PWD):/project -w /project/build $(IMAGE_NAME) ctest -R ^$*$$ --output-on-failure
 
 .PHONY: test-verbose-%
 test-verbose-%:
